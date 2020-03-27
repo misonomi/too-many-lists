@@ -1,3 +1,11 @@
+# 日本語版について
+日本語話者の方にRustおよびこの本に触れていただくために頑張って訳しつつあります．
+勝手にforkして訳した以上の関連性は元repoとはありません．
+
+ビルドしたものは https://misonomi.github.io/too-many-lists/. から読んでください．
+
+誤字・脱字・誤訳・超訳などたくさんあると思われるのでPRください
+
 # Learn Rust by writing Entirely Too Many Linked Lists
 [![Build Status](https://travis-ci.org/rust-unofficial/too-many-lists.svg?branch=master)](https://travis-ci.org/rust-unofficial/too-many-lists)
 
