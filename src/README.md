@@ -1,316 +1,302 @@
-# Learn Rust With Entirely Too Many Linked Lists
+# あまりにも超大量の連結リストで学ぶRust
 
-> Got any issues or want to check out all the final code at once?
-> [Everything's on Github!][github]
+> 困ったことがあったり，最終的なコードを全部見たいときは[Githubを見てください！][github]  
+> 訳に関する文句などは[こちら][github-forked]
 
-> **NOTE**: The current edition of this book is written against Rust 2018,
-> which was first released with rustc 1.31 (Dec 8, 2018). If your rust toolchain
-> is new enough, the Cargo.toml file that `cargo new` creates should contain the
-> line `edition = "2018"` (or if you're reading this in the far future, perhaps
-> some even larger number!). Using an older toolchain is possible, but unlocks
-> a secret **hardmode**, where you get extra compiler errors that go completely
-> unmentioned in the text of this book. Wow, sounds like fun!
+> **注意**: この文書は rustc 1.31 (Dec 8, 2018) でリリースされた Rust 2018 向けに
+> 書かれています．もしあなたのRustツールチェインが十分に新しければ、 `cargo new`
+> で作られた Cargo.toml ファイルは `edition = "2018"` という行を含んでいるはずです
+> （もしあなたが遠い未来にこれを読んでいるなら、もっと新しい数字かもしれません）。
+> 古いツールチェインを使うこともできますが、秘密の**ハードモード**が解除され、
+> あなたはこの本に全く書かれていないコンパイルエラーに見舞われるでしょう。
+> 楽しそうですね。
 
-I fairly frequently get asked how to implement a linked list in Rust. The
-answer honestly depends on what your requirements are, and it's obviously not
-super easy to answer the question on the spot. As such I've decided to write
-this book to comprehensively answer the question once and for all.
+私はよくRustでの連結リストの実装について質問を受けます。正直答えはあなたの要件に
+よりますし、その場合ごとのちょうどいい答えを出すのは明らかに簡単ではありません。
+そんなわけで、そういった質問に一発でまるっと答えられるようにこの文書を書きました。
 
-In this series I will teach you basic and advanced Rust programming
-entirely by having you implement 6 linked lists. In doing so, you should
-learn:
+この一連の文書では、6つの連結リストの実装を通してRustのプログラミングを
+基本から応用までお教えします。あなたはこんなことを学ぶでしょう：
 
-* The following pointer types: `&`, `&mut`, `Box`, `Rc`, `Arc`, `*const`, `*mut`
-* Ownership, borrowing, inherited mutability, interior mutability, Copy
-* All The Keywords: struct, enum, fn, pub, impl, use, ...
-* Pattern matching, generics, destructors
-* Testing
-* Basic Unsafe Rust
+* ポインタ型: `&`, `&mut`, `Box`, `Rc`, `Arc`, `*const`, `*mut`
+* 所有権、借用、継承された可変性、内部可変性、コピー
+* 用語: struct, enum, fn, pub, impl, use, ...
+* パターンマッチング、ジェネリクス、デストラクタ
+* テスト
+* unsafeの基本
 
-Yes, linked lists are so truly awful that you deal with all of these concepts in
-making them real.
+そう、連結リストはあまりにも恐ろしいのでこれ全部に触れなくては実装できません。
 
-Everything's in the sidebar (may be collapsed on mobile), but for quick
-reference, here's what we're going to be making:
+サイドバーにありますが（モバイルデバイスで見ると畳まれてるかも）、こういうものを
+実装します：
 
-1. [A Bad Singly-Linked Stack](first.md)
-2. [An Ok Singly-Linked Stack](second.md)
-3. [A Persistent Singly-Linked Stack](third.md)
-4. [A Bad But Safe Doubly-Linked Deque](fourth.md)
-5. [An Unsafe Singly-Linked Queue](fifth.md)
-6. [TODO: An Ok Unsafe Doubly-Linked Deque](sixth.md)
-7. [Bonus: A Bunch of Silly Lists](infinity.md)
+1. [クソ片方向スタック](first.md)
+2. [ましな片方向スタック](second.md)
+3. [永続片方向スタック](third.md)
+4. [クソだけどメモリ安全な両端キュー](fourth.md)
+5. [メモリ不安全な片方向キュー](fifth.md)
+6. [TODO: マシなメモリ不安全両端キュー](sixth.md)
+7. [おまけ: アホなリストたち](infinity.md)
 
-Just so we're all the same page, I'll be writing out all the commands that I
-feed into my terminal. I'll also be using Rust's standard package manager, Cargo,
-to develop the project. Cargo isn't necessary to write a Rust program, but it's
-*so much* better than using rustc directly. If you just want to futz around you
-can also run some simple programs in the browser via [play.rust-lang.org][play].
+皆さんがちゃんとついてこられるように、私がターミナルに入力するコマンドは全部
+書いておきます。パッケージマネージャーもRust標準のCargoを使います。Cargoは
+Rustを書くのに必要不可欠というわけではありませんが、rustcディレクトリを
+使うより*かなり*いいです。ちょっとRustを試してみるくらいのつもりなら、
+[play.rust-lang.org][play]でブラウザから簡単なコードを実行することもできます。
 
-Let's get started and make our project:
+では手始めにプロジェクトを作りましょう:
 
 ```text
 > cargo new --lib lists
 > cd lists
 ```
 
-We'll put each list in a separate file so that we don't lose any of our work.
+作ったものに上書きしてしまわないように、それぞれのリストを別々のファイルに作ります。
 
-It should be noted that the *authentic* Rust learning experience involves
-writing code, having the compiler scream at you, and trying to figure out
-what the heck that means. I will be carefully ensuring that this occurs as
-frequently as possible. Learning to read and understand Rust's generally
-excellent compiler errors and documentation is *incredibly* important to
-being a productive Rust programmer.
+*本物の*Rustの学習には、コードを書いて、コンパイラにクソ怒られて、それが何を
+意味するかを解き明かそうとする体験がつきものです。私はそうした状況が
+なるべく沢山起こるようにしました。Rustのコンパイラが出す（たいてい）有用な
+エラーメッセージを読んで理解することは、能力あるRustプログラマになるために
+*超*重要なことです。
 
-Although actually that's a lie. In writing this I encountered *way* more
-compiler errors than I show. In particular, in the later chapters I won't be
-showing a lot of the random "I typed (copy-pasted) bad" errors that you
-expect to encounter in every language. This is a *guided tour* of having the
-compiler scream at us.
+…というのは実は嘘です。これを書く間、私はお見せするより*ずっと*たくさんの
+コンパイルエラーにぶち当たりました。特に後ろの方の章ではどんな言語でも
+あるようなタイプミス/コピペミスのエラーをいちいち見せていません。これは
+コンパイラに怒られるコースをゆく*ガイド付きツアー*です。
 
-We're going to be going pretty slow, and I'm honestly not going to be very
-serious pretty much the entire time. I think programming should be fun, dang it!
-If you're the type of person who wants maximally information-dense, serious, and
-formal content, this book is not for you. Nothing I will ever make is for you.
-You are wrong.
+このツアーはゆっくり進みます。そして、正直なところクソ真面目にやるつもりは
+すこしもありません。プログラミングは楽しいものですよね、クソが！
+もしあなたが冗長さを嫌う、まじめで格式高い方ならこの本はあなた向きではありません。
+私が作る何もかもがあなた向きではありません。あなたの人生は間違っています。
 
 
 
 
-# An Obligatory Public Service Announcement
+# どうしても要る公共広告
 
-Just so we're totally 100% clear: I hate linked lists. With
-a passion. Linked lists are terrible data structures. Now of course there's
-several great use cases for a linked list:
+まず100%はっきりさせておきましょう。私は連結リストが大嫌いです。心の底から。
+連結リストはマジでひどいデータ構造です。もちろん連結リストが有用な場合も
+あります：
 
-* You want to do *a lot* of splitting or merging of big lists. *A lot*.
-* You're doing some awesome lock-free concurrent thing.
-* You're writing a kernel/embedded thing and want to use an intrusive list.
-* You're using a pure functional language and the limited semantics and absence
-  of mutation makes linked lists easier to work with.
-* ... and more!
+* 長大なリストを*何回も*分割したりくっつけたりするとき。*何回も*。
+* めっちゃすごいLockしたりFreeしたりする同期処理をするとき。
+* 侵入型[^1]リストを使ってカーネルや組み込み系を実装するとき。
+* 純粋な関数型言語を使っていて、セマンティクスが限定されていて可変性がないので
+  連結リストが使いやすいとき。
+* ... とか！
 
-But all of these cases are *super rare* for anyone writing a Rust program. 99%
-of the time you should just use a Vec (array stack), and 99% of the other 1%
-of the time you should be using a VecDeque (array deque). These are blatantly
-superior data structures for most workloads due to less frequent allocation,
-lower memory overhead, true random access, and cache locality.
+でも上のような場合はRustを書く人には*ごくまれ*です。99%の場合Vec（配列スタック）
+でいいですし、残った1%のうちの99%はVecDeque（配列両端キュー）でいいです。Vecや
+VecDequeはメモリ割当頻度が少なく、メモリオーバーヘッドが小さく、ランダムアクセス
+ができ、キャッシュ局所性があり、明らかにより優れたデータ構造です。
 
-Linked lists are as *niche* and *vague* of a data structure as a trie. Few would
-balk at me claiming a trie is a niche structure that your average programmer
-could happily never learn in an entire productive career -- and yet linked lists
-have some bizarre celebrity status. We teach every undergrad how to write a
-linked list. It's the only niche collection
-[I couldn't kill from std::collections][rust-std-list]. It's
-[*the* list in C++][cpp-std-list]!
+連結リストはトライ木と同じくらいニッチなデータ構造です。トライ木がニッチじゃないと
+言ってくる人はほとんどいないでしょう。あなたがエンジニアとしてやっていく分には
+一生学ばなくてすむのですから。それにもかかわらず連結リストはなぜか優遇されています。
+私達は学生達全員に連結リストの書き方を教えています。私はこいつだけを
+[std::collectionsから消し損ないました][rust-std-list]。[C++ではリストといえばこいつ][cpp-std-list]です！
 
-We should all as a community say *no* to linked lists as a "standard" data
-structure. It's a fine data structure with several great use cases, but those
-use cases are *exceptional*, not common.
+我々は団結して連結リストが標準的なデータ構造として扱われることに反対すべきです。
+特定の状況ではいいデータ構造ですが、そういう状況は*例外的*で、誰もが遭遇する
+わけではありません。
 
-Several people apparently read the first paragraph of this PSA and then stop
-reading. Like, literally they'll try to rebut my argument by listing one of the
-things in my list of *great use cases*. The thing right after the first
-paragraph!
+何人かの人はこの公共広告の１段落目で読むのをやめて、私が挙げた連結リストの
+*素晴らしい*用法を持ち出して私に反論しようとするでしょう。それは次の段落に
+書いてあるっての！
 
-Just so I can link directly to a detailed argument, here are several attempts
-at counter-arguments I have seen, and my response to them. Feel free to skip
-to [the first chapter](first.md) if you just want to learn some Rust!
+詳細な議論のために、私が今まで見た反論とそれに対する回答を書いておきます。
+Rustを学びたい方は遠慮なく[一章](first.md)へどうぞ！
 
 
 
 
-## Performance doesn't always matter
+## パフォーマンスがいつも重要なわけじゃないだろ
 
-Yes! Maybe your application is I/O-bound or the code in question is in some
-cold case that just doesn't matter. But this isn't even an argument for using
-a linked list. This is an argument for using *whatever at all*. Why settle for
-a linked list? Use a linked hash map!
+そうですね！多分あなたのアプリケーションにI/O待ちがあるとか、とにかく関係ない
+感じなんでしょう。でもそれは連結リストを使うかどうかという問題じゃないですよね。
+それは*あらゆるもの*を使うかどうかという問題です。なんで連結リストを使うんですか？
+連結ハッシュマップを使いましょう！
 
-If performance doesn't matter, then it's *surely* fine to apply the natural
-default of an array.
+パフォーマンスが関係ないなら*もちろん*素の配列を使ってもいいはずです。
 
 
 
 
 
-## They have O(1) split-append-insert-remove if you have a pointer there
+## ポインタを握ってればO(1)で分割して連結して挿入して削除できるじゃん
 
-Yep! Although as [Bjarne Stroustrup notes][bjarne] *this doesn't actually
-matter* if the time it takes to get that pointer completely dwarfs the
-time it would take to just copy over all the elements in an array (which is
-really quite fast).
+はい！[Bjarne Stroustrup氏が書かれているように][bjarne]、*これは実は
+どうもいい*ことです。ポインタを取得する時間が配列の要素を全部コピーする
+時間より大して速くない場合には。そして配列のコピーはかなり速いです。
 
-Unless you have a workload that is heavily dominated by splitting and merging
-costs, the penalty *every other* operation takes due to caching effects and code
-complexity will eliminate any theoretical gains.
+分割・連結のコストがめちゃくちゃ大きくない限り、*他のあらゆる*操作が
+キャッシュやコードの煩雑さによってダメダメになり、長所を消してしまいます。
 
-*But yes, if you're profiling your application to spend a lot of time in
-splitting and merging, you may have gains in a linked list*.
+*でもそうですね、もしあなたのアプリケーションが配列の分割・連結に
+大きな時間を使っているなら連結リストを使ううま味があるでしょう*。
 
 
 
 
 
-## I can't afford amortization
+## 償却 [^2] する余裕ないんだけど
 
-You've already entered a pretty niche space -- most can afford amortization.
-Still, arrays are amortized *in the worst case*. Just because you're using an
-array, doesn't mean you have amortized costs. If you can predict how many
-elements you're going to store (or even have an upper-bound), you can
-pre-reserve all the space you need. In my experience it's *very* common to be
-able to predict how many elements you'll need. In Rust in particular, all
-iterators provide a `size_hint` for exactly this case.
+あなたはすでにニッチな話をしています――ほとんどの人は償却の余裕があります。
+しかも配列が償却されるのは最悪の場合で、あなたが配列を使うからと言って
+必ず償却が行われるとは限りません。配列の要素数を予め知ることができるなら
+（そうでなくても要素の上限を知ることができるなら）必要なメモリ空間を
+とっておくことができます。経験上、要素数を予め知ることは*たいてい*できます。
+特にRustではすべてのイテレータがこのためのメソッド `size_hint` を持っています。
 
-Then `push` and `pop` will be truly O(1) operations. And they're going to be
-*considerably* faster than `push` and `pop` on linked list. You do a pointer
-offset, write the bytes, and increment an integer. No need to go to any kind of
-allocator.
+この前提に立てば、`push`と`pop`は例外なくO(1)の操作で、連結リストの`push`と`pop`
+より*かなり*速い操作になります。ただポインタを動かして、バイトデータを書き込んで、
+Integerをインクリメントすればいいだけです。データを割り当てる必要なんかありません。
 
-How's that for low latency?
+で、連結リストが低遅延だから使うんでしたっけ？
 
-*But yes, if you can't predict your load, there are worst-case
-latency savings to be had!*
+*でももしデータ長が予測できないなら、連結リストで償却を回避できます！*
 
 
 
 
 
-## Linked lists waste less space
+## 連結リストは消費メモリが少ない
 
-Well, this is complicated. A "standard" array resizing strategy is to grow
-or shrink so that at most half the array is empty. This is indeed a lot of
-wasted space. Especially in Rust, we don't automatically shrink collections
-(it's a waste if you're just going to fill it back up again), so the wastage
-can approach infinity!
+うーん、これはちょっと込み入った話ですね。「標準的な」配列のリサイズ戦略は
+配列の半分が空になるように伸縮することです。たしかにこれは相当なメモリ空間を
+無駄にしています。特にRustでは、collectionの要素を削除しても自動的に
+縮めたりしません（なのでもう一度詰め込まない限り無駄になります）。したがって
+無駄にしてるメモリ空間と時間の積は無限に膨れていきます！
 
-But this is a worst-case scenario. In the best-case, an array stack only has
-three pointers of overhead for the entire array. Basically no overhead.
+しかしこれは最悪の場合です。最良の場合では、配列スタックはたった3つの
+ポインタぶんのオーバーヘッドしかありません。基本的にはないと言っていいでしょう。
 
-Linked lists on the other hand unconditionally waste space per element.
-A singly-linked lists wastes one pointer while a doubly-linked list wastes
-two. Unlike an array, the relative wasteage is proportional to the size of
-the element. If you have *huge* elements this approaches 0 waste. If you have
-tiny elements (say, bytes), then this can be as much as 16x memory overhead
-(8x on 32-bit)!
+一方で連結リストは、無条件に要素一個ごとにオーバーヘッドがあります。
+単方向リストではポインタ1つ、双方向リストではポインタ2つ分です。
+この場合配列と違い、オーバーヘッドの割合は要素のデータサイズと関係してきます。
+もしリストの要素が*どデカい*場合、オーバーヘッドはほぼ無視できるでしょう。
+一方要素が小さい場合（1バイトとか）、ポインタのオーバヘッドは要素自体の
+16倍です！（要素が32bitのときは8倍です）
 
-Actually, it's more like 23x (11x on 32-bit) because padding will be added
-to the byte to align the whole node's size to a pointer.
+実際は要素全体の長さを揃えるためパディングが付加されるので23倍
+（32bitのとき11倍）のことが多いでしょう。
 
-This is also assuming the best-case for your allocator: that allocating and
-deallocating nodes is being done densely and you're not losing memory to
-fragmentation.
+ところでこれはアロケータの動きが最良の場合です。つまり、メモリの割当と解放が
+密に行われ、断片化によってメモリが無駄にならない場合です。
 
-*But yes, if you have huge elements, can't predict your load, and have a
-decent allocator, there are memory savings to be had!*
+*でも、そうです。もしバカでかい要素を扱っていて、操作の頻度が予測できて、
+賢いアロケータを使っているなら、メモリを節約できるでしょう！*
 
 
 
 
 
-## I use linked lists all the time in &lt;functional language&gt;
+## ずっと&lt;関数型言語&gt;で連結リスト使ってたんだよね
 
-Great! Linked lists are super elegant to use in functional languages
-because you can manipulate them without any mutation, can describe them
-recursively, and also work with infinite lists due to the magic of laziness.
+いいですね！連結リストは関数型言語では超いいですよね。ミューテーションなしで
+操作できて、再帰的に表現できて、遅延評価の魔法のおかでげで無限長のリストを
+扱えます。
 
-Specifically, linked lists are nice because they represent an iteration without
-the need for any mutable state. The next step is just visiting the next sublist.
+特に優れている点は状態を持たずにイテレーションができる点です。イテレーションの
+次のステップに行くためにはただ次のノードに行けばよいのです。
 
-However it should be noted that Rust can pattern match on arrays and talk
-about sub-arrays [using slices][slices]! It's actually even more expressive
-than a functional list in some regards because you can talk about the last
-element or even "the array without the first and last two elements" or
-whatever other crazy thing you want.
+しかし、Rustでは配列のパターンマッチができて、[スライスを使って][slices]配列のサブセット
+を扱うことができることは言っておくべきでしょう。これらの機能は実際関数型
+言語のリストより表現の幅が大きいです。なぜなら配列の最後の要素や、
+「ある配列の最初と最後と最後から二番目の要素を除いた配列」などの狂った
+表現をを何でも扱えるからです。
 
-It is true that you can't *build* a list using slices. You can only tear
-them apart.
+でもスライスでリストを*作る*ことができないのは確かです。分割することしか
+できません。
 
-For laziness we instead have [iterators][]. These can be infinite and you
-can map, filter, reverse, and concatenate them just like a functional list,
-and it will all be done just as lazily. No surprise here: slices can also be
-coerced to an iterator.
+遅延評価については[イテレータ][iterators]があります。イテレータは無限の要素を持てて、
+`map`、`filter`、`referse`、結合などの操作を関数型のリストのように行なえますし、
+これらの操作全てに遅延評価が適用されています。驚かないでいただきたいのですが
+スライスはすべてイテレータとして扱うことができます。
 
-*But yes, if you're limited to immutable semantics, linked lists can be very
-nice*.
+*でもそうです。もし不変のセマンティクスしか使えなければ、連結リストはとてもよい
+選択でしょう。*
 
-Note that I'm not saying that functional programming is necessarily weak or
-bad. However it *is* fundamentally semantically limited: you're largely only
-allowed to talk about how things *are*, and not how they should be *done*. This
-is actually a *feature*, because it enables the compiler to do tons of [exotic
-transformations][ghc] and potentially figure out the *best* way to do things
-without you having to worry about it. However this comes at the cost of being
-*able* to worry about it. There are usually escape hatches, but at some limit
-you're just writing procedural code again.
+誤解しないでいただきたいのですが、関数型言語が必ずしも雑魚いとか悪いとか
+言っているわけではありません。しかし基本的にセマンティクスが制限されているのは
+事実です。関数型言語においては、あるものが*どのようであるか*について記述できますが
+*どのように行われるか*について記述することができません。これは*機能*であり、
+それによっていろいろな[変テコな操作][ghc]ができるようになったり、あなたを
+煩わせることなく物事を成し遂げる*最良の*手段を取ることができるようになったり
+します。しかし、それはあなたの手を煩わせる*ことができる*という選択肢と引き換え
+に、です。たいてい緊急回避手段がありますが、そうでなければ手続き型コードを書く
+ことになるでしょう。
 
-Even in functional languages, you should endeavour to use the appropriate data
-structure for the job when you actually need a data structure. Yes,
-singly-linked lists are your primary tool for control flow, but they're a
-really poor way to actually store a bunch of data and query it.
+関数型言語といえども、目的にあったデータ構造を選択する努力は行われるべきです。
+確かに単方向連結リストは制御フローの記述には適していますが、データを保存して
+検索するという目的には本当に向いていません。
 
 
-## Linked lists are great for building concurrent data structures!
+## 連結リストは並列データ構造を作るのに適している！
 
-Yes! Although writing a concurrent data structure is really a whole different
-beast, and isn't something that should be taken lightly. Certainly not something
-many people will even *consider* doing. Once one's been written, you're also not
-really choosing to use a linked list. You're choosing to use an MPSC queue or
-whatever. The implementation strategy is pretty far removed in this case!
+そうですね！並列データ構造を書くということはまた別の問題であり、軽い問題でも
+ありませんが、明らかに多くの人にとっては取り組もうとは*思いもしない*ことでしょう。
+そして一度実装してしまったら、あなたは連結リストではなくMPSCキュー[^3]なり
+なんなりを使うことになります。この場合連結リストはどっか遠くに行ってしまっています！
 
-*But yes, linked lists are the defacto heroes of the dark world of lock-free
-concurrency.*
+*でもそうですね、並列処理の暗黒の世界において、連結リストは実績あるヒーローです。*
 
 
 
 
-## Mumble mumble kernel embedded something something intrusive.
+## 侵入型うんたらかんたらカーネルや組み込みどうのこうの
 
-It's niche. You're talking about a situation where you're not even using
-your language's *runtime*. Is that not a red flag that you're doing something
-strange?
+はいニッチ。あなたは使ってる言語の*ランタイム*すら使わない場合の話をしてます。
+それはあなたが変わったことをしてることを意味していますよね？
 
-It's also wildly unsafe.
+そのうえ激しくメモリ不安全です。
 
-*But sure. Build your awesome zero-allocation lists on the stack.*
+*でももちろん、サイコーのメモリ節約リストをシステムに組み込んでください。*
 
 
 
 
 
-## Iterators don't get invalidated by unrelated insertions/removals
+## 連結リストのイテレータは関係ない挿入/削除の影響を受けない
 
-That's a delicate dance you're playing. Especially if you don't have
-a garbage collector. I might argue that your control flow and ownership
-patterns are probably a bit too tangled, depending on the details.
+その話はかなりデリケートです。特にガベージコレクターがない場合には。
+多分ですがあなたの制御フローと所有権の設計はすこしごちゃごちゃしている
+かもしれません。詳しい状況によりますが。
 
-*But yes, you can do some really cool crazy stuff with cursors.*
+*でもそうですね、カーソルを使えば、本当にクールでクレイジーなことができます。*
 
 
 
 
 
-## They're simple and great for teaching!
+## 連結リストはシンプルだし教えるのに適してる！
 
-Well, yeah. You're reading a book dedicated to that premise.
-Well, singly-linked lists are pretty simple. Doubly-linked lists
-can get kinda gnarly, as we'll see.
+うん、まあそうですね。あなたが読んでる本はそういう発想に基づいてます。
+まあ片方向リストはとてもシンプルなんですけど、双方向リストはちょっと
+ひどいです。
 
 
 
 
-# Take a Breath
+# 閑話休題
 
-Ok. That's out of the way. Let's write a bajillion linked lists.
+はい、こんなものでしょう。では大量の連結リストを書いていきましょう。
 
-[On to the first chapter!](first.md)
+[第一章に行く！](first.md)
 
 
 [rust-std-list]: https://doc.rust-lang.org/std/collections/struct.LinkedList.html
 [cpp-std-list]: http://en.cppreference.com/w/cpp/container/list
 [github]: https://github.com/Gankro/too-many-lists
+[github-forked]: https://github.com/misonomi/too-many-lists
 [bjarne]: https://www.youtube.com/watch?v=YQs6IC-vgmo
 [slices]: https://doc.rust-lang.org/edition-guide/rust-2018/slice-patterns.html
 [iterators]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
 [ghc]: https://wiki.haskell.org/GHC_optimisations#Fusion
 [play]: https://play.rust-lang.org/
+
+[^1]: 訳注：intrusive。ポインタではなく値を直接保持するデータ構造  
+
+[^2]: 訳注：amortization。配列の要素数を上回る数の要素を加えようとした際配列のサイズを大きくするなどの実行時に行われる操作  
+
+[^3]: 訳注：Multi-Producer-Single-Consumer Queue。複数の入力と単一の出力を持つ並列処理向きのキュー  
