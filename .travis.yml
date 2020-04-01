@@ -1,5 +1,7 @@
 language: c
 
+if: branch = master
+
 git:
   depth: 1
   quiet: true
