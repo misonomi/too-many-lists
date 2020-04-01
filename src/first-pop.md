@@ -1,9 +1,8 @@
 # Pop
 
-Like `push`, `pop` wants to mutate the list. Unlike `push`, we actually
-want to return something. But `pop` also has to deal with a tricky corner
-case: what if the list is empty? To represent this case, we use the trusty
-`Option` type:
+`push`同様，`pop`もリストに変更を加えますが，`push`と違い返り値があります．
+そしてリストが空の場合という厄介な状態を考えなくてはいけません．この
+ケースに対処するために，信頼できる`Option`型を使います：
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
@@ -11,18 +10,18 @@ pub fn pop(&mut self) -> Option<i32> {
 }
 ```
 
-`Option<T>` is an enum that represents a value that may exist. It can either be
-`Some(T)` or `None`. We could make our own enum for this like we did for
-Link, but we want our users to be able to understand what the heck our return
-type is, and Option is so ubiquitous that *everyone* knows it. In fact, it's so
-fundamental that it's implicitly imported into scope in every file, as well
-as its variants `Some` and `None` (so we don't have to say `Option::None`).
+`Option<T>`は値が存在するかもしれないことを表すのに使われ，`Some(T)`か`None`
+の状態を取ることができます．Linkのときみたいに似たような型を自作することも
+できますが，このリストを使う人が戻り値の型が一体全体何なのか考えなくていいように
+Optionという知らない人がいないほどありふれてる型を使います．実際あまりにも
+基礎的なので何も書かなくても`Some`と`None`と一緒にすべての.rsファイルに
+インポートされています（なので`Option::None`とか書かなくてもいいのです）．
 
-The pointy bits on `Option<T>` indicate that Option is actually *generic* over
-T. That means that you can make an Option for *any* type!
+`Option<T>`のとげとげはOptionがTの*ジェネリック型*であることを表しています．
+どんな型のOptionも作ることができるのです！
 
-So uh, we have this `Link` thing, how do we figure out if it's Empty or has
-More? Pattern matching with `match`!
+はい，で，この`Link`とかいうのがあるわけですが，どうやってこれがEmptyかMoreか
+判断するのでしょう？`match`を使ったパターンマッチングです！
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
