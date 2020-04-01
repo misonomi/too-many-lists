@@ -1,9 +1,8 @@
-# Ownership 101
+# 所有権
 
-Now that we can construct a list, it'd be nice to be able to *do* something
-with it. We do that with "normal" (non-static) methods. Methods are a special
-case of function in Rust because of  the `self` argument, which doesn't have
-a declared type:
+リストを作ることができるようになったので，次はリストで何か*できる*ようになると
+いいですね．それを実現するために普通の（スタティックでない）メソッドを使います．
+メソッドは`self`という型のない引数を持つ，関数の特別な形です：
 
 ```rust ,ignore
 fn foo(self, arg2: Type2) -> ReturnType {
@@ -11,13 +10,15 @@ fn foo(self, arg2: Type2) -> ReturnType {
 }
 ```
 
-There are 3 primary forms that self can take: `self`, `&mut self`, and `&self`.
-These 3 forms represent the three primary forms of ownership in Rust:
+selfは主に3つの形をとります：`self`，`&mut self`，そして `&self`です．
+これらはRustにおける所有権の3つの形に対応しています：
 
-* `self` - Value
-* `&mut self` - mutable reference
-* `&self` - shared reference
+* `self` - 値
+* `&mut self` - 可変な参照[^1]
+* `&self` - 共有参照[^2]
 
+値は*本物の*所有権を表します．この値を煮るなり焼くなり動かすなり破壊するなり変更するなり
+参照を貸し出すなり自由です．
 A value represents *true* ownership. You can do whatever you want with a value:
 move it, destroy it, mutate it, or loan it out via a reference. When you pass
 something by value, it's *moved* to the new location. The new location now
@@ -43,3 +44,7 @@ Later we'll see that the rule about mutation can be bypassed in certain cases.
 This is why shared references aren't called *immutable* references. Really,
 mutable references could be called *unique* references, but we've found that
 relating ownership to mutability gives the right intuition 99% of the time.
+
+[^1]: mutable reference．定訳がないような気がする
+
+[^2]: shared reference．定訳が以下略
