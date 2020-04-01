@@ -1,25 +1,23 @@
-# Basic Data Layout
+# 基本データ設計
 
-Alright, so what's a linked list? Well basically, it's a bunch of pieces of data
-on the heap (hush, kernel people!) that point to each other in sequence. Linked
-lists are something procedural programmers shouldn't touch with a 10-foot pole,
-and what functional programmers use for everything. It seems fair, then, that we
-should ask functional programmers for the definition of a linked list. They will
-probably give you something like the following definition:
+よし，で，連結リストってなんでしょう？えー，基本的にはヒープに割り当てられたデータの山で
+（カーネル勢はちょっと黙っててください），それぞれが順番に互いのポインタを持っています．
+連結リストは，手続き型言語のプログラマが10m以内に近づかないものであり関数型言語の
+プログラマがあらゆる用途に使うものです．それなら，関数型言語のプログラマにどんなものか
+説明してもらうのがよさそうですね．彼らはこんな感じの定義を寄越すでしょう：
 
 ```haskell
 List a = Empty | Elem a (List a)
 ```
 
-Which reads approximately as "A List is either Empty or an Element followed by a
-List". This is a recursive definition expressed as a *sum type*, which is a
-fancy name for "a type that can have different values which may be different
-types". Rust calls sum types `enum`s! If you're coming from a C-like language,
-this is exactly the enum you know and love, but on meth. So let's transcribe
-this functional definition into Rust!
+これはだいたい「リストは空か，リストにリンクした要素である」みたいな感じに読めます．
+*直和型*を用いた再起的な定義ですね．直和型というのは「違う型の値を持つことができる型」
+のことです．Rustでは直和型は`enum`に相当します！もしCライクな言語に慣れているなら，
+Rustのenumはあなたが大好きなあのenumそのものです．じゃあ上の関数型の定義をRustっぽく
+書き換えてみましょう！
 
-For now we'll avoid generics to keep things simple. We'll only support
-storing signed 32-bit integers:
+とりあえず話を簡単にするためにジェネリクスは使わず，32bit intだけを要素として
+持つことにします：
 
 ```rust ,ignore
 // in first.rs
@@ -31,7 +29,7 @@ pub enum List {
 }
 ```
 
-*phew*, I'm swamped. Let's just go ahead and compile that:
+ぬわ疲．それじゃコンパイルしましょう：
 
 ```text
 > cargo build
@@ -48,27 +46,25 @@ error[E0072]: recursive type `first::List` has infinite size
   = help: insert indirection (e.g., a `Box`, `Rc`, or `&`) at some point to make `first::List` representable
 ```
 
-Well. I don't know about you, but I certainly feel betrayed by the functional
-programming community.
+えっと，あなたはどうか分かりませんが私は関数型界隈に裏切られた気分です．
 
-If we actually check out the error message (after we get over the whole
-betrayal thing), we can see that rustc is actually telling us exactly
-how to solve this problem:
+エラーメッセージを見てみると（裏切られた絶望を乗り越えたあとで），rustcはまさに
+エラーを解決する方法を示しています：
 
 > insert indirection (e.g., a `Box`, `Rc`, or `&`) at some point to make `first::List` representable
 
-Alright, `box`. What's that? Let's google `rust box`...
+おっけー，`box`ね．何それ？ググってみましょう．`rust box`...
 
 > [std::boxed::Box - Rust](https://doc.rust-lang.org/std/boxed/struct.Box.html)
 
-Lesse here...
+これかな...
 
 > `pub struct Box<T>(_);`
 >
 > A pointer type for heap allocation.
 > See the [module-level documentation](https://doc.rust-lang.org/std/boxed/) for more.
 
-*clicks link*
+*リンクをクリックする*
 
 > `Box<T>`, casually referred to as a 'box', provides the simplest form of heap allocation in Rust. Boxes provide ownership for this allocation, and drop their contents when they go out of scope.
 >
@@ -103,11 +99,13 @@ fn main() {
 >
 > It wouldn't work. This is because the size of a List depends on how many elements are in the list, and so we don't know how much memory to allocate for a Cons. By introducing a Box, which has a defined size, we know how big Cons needs to be.
 
-Wow, uh. That is perhaps the most relevant and helpful documentation I have ever seen. Literally the first thing in the documentation is *exactly what we're trying to write, why it didn't work, and how to fix it*.
+わお，うん．多分今まで見た中で一番知りたいことが書いてあるドキュメントですね．
+ドキュメントのまさに最初に書いてあるのは*私達がやろうとしていたことそのものと，
+なぜそれが動かないのかと，どうやって直すか*です．
 
-Dang, docs rule.
+ドキュメントが強すぎる．
 
-Ok, let's do that:
+よし，じゃあやってみましょう：
 
 ```rust ,ignore
 pub enum List {
@@ -122,38 +120,36 @@ pub enum List {
    Finished dev [unoptimized + debuginfo] target(s) in 0.22s
 ```
 
-Hey it built!
+やった，ビルドが通りました！
 
-...but this is actually a really foolish definition of a List, for a few reasons.
+...でもちょっと考えてみるとこれはかなりバカっぽいリストです．
 
-Consider a list with two elements:
-
-```text
-[] = Stack
-() = Heap
-
-[Elem A, ptr] -> (Elem B, ptr) -> (Empty *junk*)
-```
-
-There are two key issues:
-
-* We're allocating a node that just says "I'm not actually a Node"
-* One of our nodes isn't allocated at all.
-
-On the surface, these two seem to cancel each-other out. We allocate an
-extra node, but one of our nodes doesn't need to be allocated at all.
-However, consider the following potential layout for our list:
+要素が2つあるリストを考えてみましょう．
 
 ```text
-[ptr] -> (Elem A, ptr) -> (Elem B, *null*)
+[] = スタック
+() = ヒープ
+
+[要素A, ポインタ] -> (要素B, ポインタ) -> (Empty *ゴミ*)
 ```
 
-In this layout we now unconditionally heap allocate our nodes. The
-key difference is the absence of the *junk* from our first layout. What is
-this junk? To understand that, we'll need to look at how an enum is laid out
-in memory.
+問題は2つあります：
 
-In general, if we have an enum like:
+* 最後のノードは「僕は実はノードじゃないヨ」を意味するデータを割り当てられている．
+* 最初のノードは全くヒープのメモリ空間を割り当てられていない．
+
+表面的には，これらは互いに打ち消し合っているように見えます．一方で追加のノードを
+割当て，もう一方では割り当てていない...でも次のようなデータ構造を見てみましょう：
+
+```text
+[ポインタ] -> (要素A, ポインタ) -> (要素B, *null*)
+```
+
+この構成では要素数に関わらず各要素のためにヒープのメモリ空間を割り当てます．
+重要な違いは1つ目の設計にあった*ゴミ*がないことです．このゴミはなんなのでしょうか？
+それを知るために，enumがどのようにメモリに割り当てられるか見てみましょう．
+
+一般にenumはこんな感じです：
 
 ```rust ,ignore
 enum Foo {
@@ -164,57 +160,53 @@ enum Foo {
 }
 ```
 
-A Foo will need to store some integer to indicate which *variant* of the enum it
-represents (`D1`, `D2`, .. `Dn`). This is the *tag* of the enum. It will also
-need enough space to store the *largest* of `T1`, `T2`, .. `Tn` (plus some extra
-space to satisfy alignment requirements).
+Fooはどの*列挙子*（`D1`, `D2`, .. `Dn`）であるかを表す整数をもつ必要があります．これが
+enumの*タグ*です．それに加え，`T1`, `T2`, .. `Tn`のうち*最大の*ものが入るメモリ空間が
+必要になります（あとメモリの整列のためのパディング）．
 
-The big takeaway here is that even though `Empty` is a single bit of
-information, it necessarily consumes enough space for a pointer and an element,
-because it has to be ready to become an `Elem` at any time. Therefore the first
-layout heap allocates an extra element that's just full of junk, consuming a
-bit more space than the second layout.
+ここで発生している大いなるムダは，`Empty`がたった1bitの情報でもポインタ1個と要素1個分の
+メモリが必要であることです．`Elem`にいつ変換されてもいいようにしなくてはならないのです．
+そんなわけで1つ目の設計ではゴミデータを割り当てざるを得ず，2つ目の構成より若干大きい
+スペースが必要になります．
 
-One of our nodes not being allocated at all is also, perhaps surprisingly,
-*worse* than always allocating it. This is because it gives us a *non-uniform*
-node layout. This doesn't have much of an appreciable effect on pushing and
-popping nodes, but it does have an effect on splitting and merging lists.
+ノードの一つがヒープにないのも，多分ビビるほど，常に全ノードがヒープに割り当てられるより
+*悪い*です．ノードの扱いが統一的でないと，pushやpopではそれほど困らないかもしれませんが
+分割や結合の際に厄介なことになります．
 
-Consider splitting a list in both layouts:
+それぞれの設計でリストを分割することを考えてみましょう：
 
 ```text
-layout 1:
+設計1:
 
-[Elem A, ptr] -> (Elem B, ptr) -> (Elem C, ptr) -> (Empty *junk*)
+[要素A, ポインタ] -> (要素B, ポインタ) -> (要素C, ポインタ) -> (Empty *ゴミ*)
 
-split off C:
+Cを分割:
 
-[Elem A, ptr] -> (Elem B, ptr) -> (Empty *junk*)
-[Elem C, ptr] -> (Empty *junk*)
+[要素A, ポインタ] -> (要素B, ポインタ) -> (Empty *ゴミ*)
+[要素C, ポインタ] -> (Empty *ゴミ*)
 ```
 
 ```text
-layout 2:
+設計2:
 
-[ptr] -> (Elem A, ptr) -> (Elem B, ptr) -> (Elem C, *null*)
+[ポインタ] -> (要素A, ポインタ) -> (要素B, ポインタ) -> (要素C, *null*)
 
-split off C:
+Cを分割:
 
-[ptr] -> (Elem A, ptr) -> (Elem B, *null*)
-[ptr] -> (Elem C, *null*)
+[ポインタ] -> (要素A, ポインタ) -> (要素B, *null*)
+[ポインタ] -> (要素C, *null*)
 ```
 
-Layout 2's split involves just copying B's pointer to the stack and nulling
-the old value out. Layout 1 ultimately does the same thing, but also has to
-copy C from the heap to the stack. Merging is the same process in reverse.
+設計2では要素Bのポインタをスタックにコピーして，元あった場所をnullにするだけです．
+設計1でも同じことをしていますが，要素Cをヒープからスタックにコピーする必要があります．
+結合は同じことを逆にやるだけです．
 
-One of the few nice things about a linked list is that you can construct the
-element in the node itself, and then freely shuffle it around lists without
-ever moving it. You just fiddle with pointers and stuff gets "moved". Layout 1
-trashes this property.
+連結リストの数少ない良いところのひとつに要素をノード自体の中で組み立て，メモリ空間を
+移動させずに順番を入れ替える事ができる点があります．ポインタをいじるだけでリスト内の
+順番が動くのです．設計1はこの特長を持ちません．
 
-Alright, I'm reasonably convinced Layout 1 is bad. How do we rewrite our List?
-Well, we could do something like:
+はい，設計1がクソなことが証明されました．ではどう書き直せばいいでしょうか？じゃあこんな
+感じで：
 
 ```rust ,ignore
 pub enum List {
@@ -224,18 +216,16 @@ pub enum List {
 }
 ```
 
-Hopefully this seems like an even worse idea to you. Most notably, this really
-complicates our logic, because there is now a completely invalid state:
-`ElemThenNotEmpty(0, Box(Empty))`. It also *still* suffers from non-uniformly
-allocating our elements.
+悪化してるように見えたなら良かったです．特筆すべき点は，この設計は`ElemThenNotEmpty(0, Box(Empty))`
+というまったく無意味な状態を持てるようになっており，ロジックを複雑にしていることです．
+しかも相変わらずノードがスタックにあったりヒープにあったりします．
 
-However it does have *one* interesting property: it totally avoids allocating
-the Empty case, reducing the total number of heap allocations by 1. Unfortunately,
-in doing so it manages to waste *even more space*! This is because the previous
-layout took advantage of the *null pointer optimization*.
+とはいえ，この設計は*ひとつ*興味深い特徴を持っています：Emptyの状態がなく，ヒープの
+割当が1要素分小さいことです．不幸にもそれによって*更に大きい*メモリ空間を無駄にしている
+んですけどね！なぜかというと，先程の設計が*ヌルポインタ最適化*を行っているからです．
 
-We previously saw that every enum has to store a *tag* to specify which variant
-of the enum its bits represent. However, if we have a special kind of enum:
+さっきenumはどの列挙子を持つかを管理するタグを持っていると言いました．しかし，このような
+特別な形のenumについては：
 
 ```rust,ignore
 enum Foo {
@@ -244,31 +234,28 @@ enum Foo {
 }
 ```
 
-the null pointer optimization kicks in, which *eliminates the space needed for
-the tag*. If the variant is A, the whole enum is set to all `0`'s. Otherwise,
-the variant is B. This works because B can never be all `0`'s, since it contains
-a non-zero pointer. Slick!
+ヌルポインタ最適化が行われ，*タグのためにはメモリ空間が使われなくなります*．列挙子Aのとき
+enumはすべて`0`が割り当てられ，そうでないとき列挙子Bが割り当てられます．列挙子Bはnullでない
+ポインタを含むため，中身が全て`0`ということはあり得ないのでこういう事ができるのです．
+かっこいい！
 
-Can you think of other enums and types that could do this kind of optimization?
-There's actually a lot! This is why Rust leaves enum layout totally unspecified.
-There are a few more complicated enum layout optimizations that Rust will do for
-us, but the null pointer one is definitely the most important!
-It means `&`, `&mut`, `Box`, `Rc`, `Arc`, `Vec`, and
-several other important types in Rust have no overhead when put in an `Option`!
-(We'll get to most of these in due time.)
+他にこういう最適化ができるenumの形はどんなのがあるか思いつきますか？実はいっぱいあります！
+これがRustがenumのメモリレイアウトを定義しない理由です．他にもいくつか複雑なRustの
+enumメモリレイアウト最適化戦略がありますが，ヌルポインタ最適化が明らかに一番重要です！
+ヌルポインタ最適化によって`&`, `&mut`, `Box`, `Rc`, `Arc`, `Vec`などを`Option`
+に入れてもオーバーヘッドが発生しません（これらの型についてはおいおい触れます）．
 
-So how do we avoid the extra junk, uniformly allocate, *and* get that sweet
-null-pointer optimization? We need to better separate out the idea of having an
-element from allocating another list. To do this, we have to think a little more
-C-like: structs!
+で，どうすればゴミデータの割当を防ぎ，統一的にメモリを割り当たうえでヌルポインタ最適化
+の恩恵を得ることができるでしょうか？要素を持つということとリストを新しく割り当てるという
+ことを切り離して考えるほうがよさそうです．そのためにはCライクな構造体についてもう少し
+考えなくてはいけません！
 
-While enums let us declare a type that can contain *one* of several values,
-structs let us declare a type that contains *many* values at once. Let's break
-our List into two types: A List, and a Node.
+enumがいくつかある値の*ひとつ*を保持する型なら，構造体は*複数*を一度に保持する型です．
+リストを2つの型に分割しましょう．ListとNodeです．
 
-As before, a List is either Empty or has an element followed by another List.
-By representing the "has an element followed by another List" case by an
-entirely separate type, we can hoist the Box to be in a more optimal position:
+さっきと同様Listは空（Empty）かリストが後ろにくっついた要素です．「リストが後ろに
+くっついた要素」を別の型で表現することでBoxをさらに最適化された状態にもっていく
+ことができます：
 
 ```rust ,ignore
 struct Node {
@@ -282,15 +269,14 @@ pub enum List {
 }
 ```
 
-Let's check our priorities:
+ちゃんとできてるか確認してみましょう：
 
-* Tail of a list never allocates extra junk: check!
-* `enum` is in delicious null-pointer-optimized form: check!
-* All elements are uniformly allocated: check!
+* リストの末尾にゴミがない：OK!
+* `enum`がヌルポインタ最適化されている：OK!
+* ノードが統一的に割り当てられる：OK!
 
-Alright! We actually just constructed exactly the layout that we used to
-demonstrate that our first layout (as suggested by the official Rust
-documentation) was problematic.
+よし！これで問題があった（ことがRustの公式ドキュメントに指摘された）はじめの設計
+の問題点を克服しました．
 
 ```text
 > cargo build
@@ -308,12 +294,10 @@ warning: private type `first::Node` in public interface (error E0446)
 
 :(
 
-Rust is mad at us again. We marked the `List` as public (because we want people
-to be able to use it), but not the `Node`. The problem is that the internals of
-an `enum` are totally public, and we're not allowed to publicly talk about
-private types. We could make all of `Node` totally public, but generally in Rust
-we favour keeping implementation details private. Let's make `List` a struct, so
-that we can hide the implementation details:
+またRustに怒られました．`List`を（外部から使ってほしいので）publicにしましたが`Node`
+をpublicにはしていませんでした．問題は，publicな`enum`の中は全てpublicでなくてはならないことです．
+`Node`をpublicにすることもできますが，一般にRustでは実装の詳細を隠蔽することが好まれます．
+`List`を構造体にすることで実装の詳細を隠すことにしましょう：
 
 
 ```rust ,ignore
@@ -332,8 +316,8 @@ struct Node {
 }
 ```
 
-Because `List` is a struct with a single field, its size is the same as that
-field. Yay zero-cost abstractions!
+`List`はフィールドがひとつしかない構造体なので，サイズはフィールドと同じになります．
+ゼロコスト抽象化です イエーイ！
 
 ```text
 > cargo build
@@ -372,8 +356,7 @@ warning: field is never used: `next`
 
 ```
 
-Alright, that compiled! Rust is pretty mad, because as far as it can tell,
-everything we've written is totally useless: we never use `head`, and no one who
-uses our library can either since it's private. Transitively, that means Link
-and Node are useless too. So let's solve that! Let's implement some code for our
-List!
+よっしゃ，コンパイルが通りました！Rustは私達が作ったものが完全に無駄だといて
+めちゃくちゃ怒ってます．`head`をどこでも使ってないし，プライベートフィールドなので
+外部からも参照できないからです．したがって`Link`と`Node`も同様に無意味というわけです．
+というわけで次はこれを解決しましょう．このリストを使うコードを実装していきましょう！

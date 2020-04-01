@@ -1,6 +1,6 @@
 # New
 
-To associate actual code with a type, we use `impl` blocks:
+型に対して実装を行うためには`impl`を使います：
 
 ```rust ,ignore
 impl List {
@@ -8,8 +8,7 @@ impl List {
 }
 ```
 
-Now we just need to figure out how to actually write code. In Rust we declare
-a function like so:
+あとはコードの書き方がわかればいいだけです．Rustではこんな感じに関数を宣言します：
 
 ```rust ,ignore
 fn foo(arg1: Type1, arg2: Type2) -> ReturnType {
@@ -17,10 +16,9 @@ fn foo(arg1: Type1, arg2: Type2) -> ReturnType {
 }
 ```
 
-The first thing we want is a way to *construct* a list. Since we hide the
-implementation details, we need to provide that as a function. The usual way
-to do that in Rust is to provide a static method, which is just a
-normal function inside an `impl`:
+はじめに必要なのはリストを*作る*手段です．実装を隠蔽しているので関数化する必要が
+あります．Rustでの一般的なやりかたはスタティックメソッドを作るというもので，
+`impl`のなかに普通に関数を書きます：
 
 ```rust ,ignore
 impl List {
@@ -30,16 +28,13 @@ impl List {
 }
 ```
 
-A few notes on this:
+いくつか注意事項があります：
 
-* Self is an alias for "that type I wrote at the top next to `impl`". Great for
-  not repeating yourself!
-* We create an instance of a struct in much the same way we declare it, except
-  instead of providing the types of its fields, we initialize them with values.
-* We refer to variants of an enum using `::`, which is the namespacing operator.
-* The last expression of a function is implicitly returned.
-  This makes simple functions a little neater. You can still use `return`
-  to return early like other C-like languages.
+* Selfというのは「上にある`impl`のすぐ右に書いた型」のことです．繰り返しが少ないのはよいことですね！
+* 構造体のインスタンスの生成は宣言とほぼ同じですが，フィールドの型を指定する代わりに値を与えます．
+* enumの列挙子の指定に`::`を使いました．これは名前空間を区切る識別子です．
+* 関数の最後に書かれたものが返り値になります．これによって簡単な関数を若干きれいに書けます．
+  もちろん他のCライク言語のように`return`文を使って早期リターンすることもできます．
 
 
 
