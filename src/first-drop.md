@@ -1,13 +1,13 @@
 # Drop
 
-We can make a stack, push on to, pop off it, and we've even tested that it all
-works right!
+スタックを作りましたし，pushとpopもできるようになりましたし，テストまで実装して
+ちゃんと動くこともわかりました！
 
-Do we need to worry about cleaning up our list? Technically, no, not at all!
-Like C++, Rust uses destructors to automatically clean up resources when they're
-done with. A type has a destructor if it implements a *trait* called Drop.
-Traits are Rust's fancy term for interfaces. The Drop trait has the following
-interface:
+リストの後片付けをするコードを書く必要があるでしょうか？技術的には
+ノーです．全く必要ありません！C++のように，Rustはデストラクタを使って使い終わった
+リソースを自動的に解放してくれます．Dropという名前の*トレイト*を実装することで
+デストラクタを型に与えることができます．Rustではインターフェースをトレイト
+と呼びます．Dropはこんな感じのインターフェースです：
 
 ```rust ,ignore
 pub trait Drop {
@@ -15,32 +15,29 @@ pub trait Drop {
 }
 ```
 
-Basically, "when you go out of scope, I'll give you a second to clean up your
-affairs".
+基本的には，スコープの外に出たときに後片付けのためにdropが実行されます．
 
-You don't actually need to implement Drop if you contain types that implement
-Drop, and all you'd want to do is call *their* destructors. In the case of
-List, all it would want to do is drop its head, which in turn would *maybe*
-try to drop a `Box<Node>`. All that's handled for us automatically... with one
-hitch.
+実はDropを実装してある型を含む型に対してはDropを実装しなくてもよく，その
+Dropが実装してある型のデストラクタを呼べばいいだけです．私達が実装したListの場合
+デストラクタではheadを消せばいいだけですから，何も実装しなくても`Box<Node>`を
+消してくれる*はず*です．全ては自動的に処理されます…が，一つだけ問題があります．
 
-The automatic handling is going to be bad.
+その自動処理はクソです．
 
-Let's consider a simple list:
+こんな感じの簡単なリストを考えてみましょう：
 
 
 ```text
 list -> A -> B -> C
 ```
 
-When `list` gets dropped, it will try to drop A, which will try to drop B,
-which will try to drop C. Some of you might rightly be getting nervous. This is
-recursive code, and recursive code can blow the stack!
+`list`がdropされるとき，`list`はAをdropしようとし，AはBを，BはCをdropしようとします．
+不安になってきた人もいますよね？これは再帰なので，スタックを消費し尽くしてしまう
+可能性があります！
 
-Some of you might be thinking "this is clearly tail recursive, and any decent
-language would ensure that such code wouldn't blow the stack". This is, in fact,
-incorrect! To see why, let's try to write what the compiler has to do, by
-manually implementing Drop for our List as the compiler would:
+「これは末尾再帰だから，ちゃんとした言語ならスタックが尽きないようにしてくれるだろ」
+と思った人もいるでしょう．それは，実は，間違いです！理由を知るために，コンパイラが
+実際にするであろう処理をdropとして実装してみましょう：
 
 
 ```rust ,ignore
@@ -77,9 +74,9 @@ impl Drop for Node {
 }
 ```
 
-We *can't* drop the contents of the Box *after* deallocating, so there's no
-way to drop in a tail-recursive manner! Instead we're going to have to manually
-write an iterative drop for `List` that hoists nodes out of their boxes.
+Boxを`deallocate`した*後に*中身をdropすることは*できません*．したがって末尾再帰で
+このListをdropすることはできないのです！なのでBoxからNodeを取り出してdropする
+反復処理を書かなくてはいけません．
 
 
 ```rust ,ignore
@@ -109,25 +106,29 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Great!
+いいですね！
 
 ----------------------
 
 <span style="float:left">![Bonus](img/profbee.gif)</span>
 
-## Bonus Section For Premature Optimization!
+## おまけ：早期最適化
 
-Our implementation of drop is actually *very* similar to
-`while let Some(_) = self.pop() { }`, which is certainly simpler. How is
-it different, and what performance issues could result from it once we start
-generalizing our list to store things other than integers?
+私達が実装した`drop`は`while let Some(_) = self.pop() { }`に*とても*よく
+似ていますし，そう書いたほうが簡潔です．これらの違いはなんでしょうか？
+また，リストにint以外を入れた場合パフォーマンスにどのように影響する
+でしょうか？
 
 <details>
-  <summary>Click to expand for answer</summary>
+  <summary>クリックして答えを見る</summary>
 
-Pop returns `Option<i32>`, while our implementation only manipulates Links (`Box<Node>`). So our implementation only moves around pointers to nodes, while the pop-based one will move around the values we stored in nodes. This could be very expensive if we generalize our list and someone uses it to store instances of VeryBigThingWithADropImpl (VBTWADI). Box is able to run the drop implementation of its contents in-place, so it doesn't suffer from this issue. Since VBTWADI is *exactly* the kind of thing that actually makes using a linked-list desirable over an array, behaving poorly on this case would be a bit of a disappointment.
+`pop`は`Option<i32>`を返しますが，私達の実装ではLink（`Box<Node>`）に対する操作を行います．つまり，私達の実装はNodeのポインタを
+動かすだけであるのに対し，popはNodeの値をムーブするのです．もしListを一般化してDrop実装済みめちゃデカ型（VeryBigThingWithADropImpl
+　略して　VBTWADI）も入れられるようにしたとき，これは超コストのかかる操作になるおそれがあります．しかし，Boxは内容物のDropをそのまま
+呼べるのでこの問題を回避することができます．VBTWADIを入れることこそが*まさしく*配列ではなく連結リストを使うメリットなので，VBTWADIを
+使うときパフォーマンスが良くなかったらちょっと残念ですよね．
 
-If you wish to have the best of both implementations, you could add a new method,
-`fn pop_node(&mut self) -> Link`, from-which `pop` and `drop` can both be cleanly derived.
+両方の実装のいいとこ取りをしたいなら，新しく`fn pop_node(&mut self) -> Link`というメソッドを
+作り，これを使って`pop`と`drop`を実装するのがいいでしょう．
 
 </details>

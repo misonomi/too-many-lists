@@ -1,6 +1,6 @@
-# The Final Code
+# 最終コード
 
-Alright, 6000 words later, here's all the code we managed to actually write:
+はい，このコードを書くまでに6000語（翻訳前）かかりました：
 
 ```rust
 use std::mem;
@@ -89,5 +89,5 @@ mod test {
 }
 ```
 
-Geez. 80 lines, and half of it was tests! Well, I did say this first one was
-going to take a while!
+マジかよ，80行しかないし半分はテストだぞ！最初に長い章になりますと言ったとおりに
+なりましたね．
