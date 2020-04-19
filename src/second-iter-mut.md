@@ -1,10 +1,10 @@
 # IterMut
 
-正直に言います。IterMutは*治安が悪い*です。この言葉が治安が悪いですが、
+正直に言います．IterMutは*治安が悪い*です．この言葉自体が治安悪いですが，
 IterMutはIterと明らかに同じものです！
 
-意味的にはそうですが、参照の基本原理から考えると、IterMutはガチの魔法で、
-Iterは児戯に等しいと言えます。
+意味的にはそうですが，参照の基本に忠実に実装するとIterMutはガチの魔法になり，
+それに比べればIterは児戯に等しいと言えます．
 
 私達がIterのために実装したIteratorに注目してください：
 
@@ -26,8 +26,8 @@ impl<'a, T> Iterator for Iter<'a, T> {
 }
 ```
 
-`next`の入力のライフタイムと出力のライフタイムの間には*何の*関係もありません。
-なぜそんなことを気にするのでしょう？これのせいで`next`を無条件に呼びまくる
+`next`の入力のライフタイムと出力のライフタイムの間には*何の*関係もありません．
+なぜそんなことを気にするのでしょう？これのおかげで`next`を無条件に呼びまくる
 ことができるからです！
 
 
@@ -43,15 +43,14 @@ let z = iter.next().unwrap();
 
 いいですね！
 
-This is *definitely fine* for shared references because the whole point is that
-you can have tons of them at once. However mutable references *can't* coexist.
-The whole point is that they're exclusive.
+共有参照を使うなら*間違いなく*これでOKです．共有参照はいくつでも持つことができるからです．
+しかし可変参照は同時に複数存在できません．
 
-The end result is that it's notably harder to write IterMut using safe
-code (and we haven't gotten into what that even means yet...). Surprisingly,
-IterMut can actually be implemented for many structures completely safely!
+結局安全なコードを使う限り（この言葉の意味はまだ分かりませんが...）
+IterMutを実装するのはとてつもなく困難なのです．驚くべきことにIterMutは大抵の
+structに対し全くもって安全に実装することができます！
 
-We'll start by just taking the Iter code and changing everything to be mutable:
+とりあえずIterのコードをコピーしてきて，全部可変にするところから始めましょう：
 
 ```rust ,ignore
 pub struct IterMut<'a, T> {
@@ -93,9 +92,9 @@ error[E0507]: cannot move out of borrowed content
     |         ^^^^^^^^^ cannot move out of borrowed content
 ```
 
-Ok looks like we've got two different errors here. The first one looks really clear
-though, it even tells us how to fix it! You can't upgrade a shared reference to a mutable
-one, so `iter_mut` needs to take `&mut self`. Just a silly copy-paste error.
+この上下のエラーは別々のもののようです．1つ目はどうやって直すか書いてありますし簡単そうですね！
+共有参照を可変参照に昇格させることはできないので`iter_mut`は`&mut self`を引数にとらなくては
+いけません．ただのコピペミスですね．
 
 ```rust ,ignore
 pub fn iter_mut(&mut self) -> IterMut<'_, T> {
@@ -103,34 +102,28 @@ pub fn iter_mut(&mut self) -> IterMut<'_, T> {
 }
 ```
 
-What about the other one?
+もう一つのエラーはなんでしょうか？
 
-Oops! I actually accidentally made an error when writing the `iter` impl in
-the previous section, and we were just getting lucky that it worked!
+おっと！前章の`iter`のコードにバグがあったものの，幸いにも動いていたようです！
 
-We have just had our first run in with the magic of Copy. When we introduced [ownership][ownership] we
-said that when you move stuff, you can't use it anymore. For some types, this
-makes perfect sense. Our good friend Box manages an allocation on the heap for
-us, and we certainly don't want two pieces of code to think that they need to
-free its memory.
+私達はCopyの魔法を初めて目の当たりにしています．私達が[所有権][ownership]を使い始めたとき，
+ムーブされてしまったものは使えないと言いました．幾つかの型に対しては，これは筋の通った
+挙動です．かしこいBoxくんはムーブした変数のヒープの割当を2つに増やしたりはしません．
 
-However for other types this is *garbage*. Integers have no
-ownership semantics; they're just meaningless numbers! This is why integers are
-marked as Copy. Copy types are known to be perfectly copyable by a bitwise copy.
-As such, they have a super power: when moved, the old value *is* still usable.
-As a consequence, you can even move a Copy type out of a reference without
-replacement!
+しかし他の型については，この挙動は*ゴミ*です．例えば整数はただの数であり，所有権もクソも
+ありません．そこで，整数型はCopy型のひとつに入れられています．Copy型はビットごとのコピーに
+よって元通りコピーできる型を指し，ムーブされたとき，元の変数を使用できるという強力な
+特徴を持っています．同様にCopy型は，`mem::replace`などで代わりを用意しなくても参照から
+取り出すことができるのです！
 
-All numeric primitives in rust (i32, u64, bool, f32, char, etc...) are Copy.
-You can also declare any user-defined type to be Copy as well, as long as
-all its components are Copy.
+Rustの数値プリミティブ型（i32, u64, bool, f32, char, などなど）はCopy型です．
+他の型も，構成要素が全てCopy型である限りCopy型にすることができます．
 
-Critically to why this code was working, shared references are also Copy!
-Because `&` is copy, `Option<&>` is *also* Copy. So when we did `self.next.map` it
-was fine because the Option was just copied. Now we can't do that, because
-`&mut` isn't Copy (if you copied an &mut, you'd have two &mut's to the same
-location in memory, which is forbidden). Instead, we should properly `take`
-the Option to get it.
+なぜIterのコードが動いていたかといえば，共有参照もCopy型だからです．そして`&`がCopy型なので
+`Option<&>`もCopy型です．そして`self.next.map`したとき，Optionがコピーされるので
+今回私達が出会ったエラーは出なかったというわけです．しかし今回はCopy型ではない`&mut`を
+使っているため（もし&mutをコピーできたら同じメモリアドレスに2つの&mutを持つことになって
+しまいます），`take`でOptionの中身を取らないといけません．
 
 
 ```rust ,ignore
@@ -147,9 +140,9 @@ fn next(&mut self) -> Option<Self::Item> {
 
 ```
 
-Uh... wow. Holy shit! IterMut Just Works!
+えー...と，やりました！IterMutができました！
 
-Let's test this:
+テストしてみましょう：
 
 
 ```rust ,ignore
@@ -182,31 +175,26 @@ test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Yep. It works.
+やった．うごいてますね．
 
-Holy shit.
+マジか．
 
-What.
+どういうことなの...
 
-Ok I mean it actually *is* supposed to work, but there's usually something
-stupid that gets in the way! Let's be clear here:
+まあこれが動く*ように*実装してはいました．でもたいてい何かに邪魔されるんです！
+ひとつはっきりさせておきましょう：
 
-We have just implemented a piece of code that takes a singly-linked list, and
-returns a mutable reference to every single element in the list at most once.
-And it's statically verified to do that. And it's totally safe. And we didn't
-have to do anything wild.
+片方向連結リストの要素をひとつずつ，その可変参照を取得するコードを実装しました．そして
+それが動くことも確認しました．コードは安全です．なにも治安の悪いことをしてません．
 
-That's kind of a big deal, if you ask me. There are a couple reasons why
-this works:
+私に言わせれば，これは結構すごいことです．うまく行った理由はいくつかあります：
 
-* We `take` the `Option<&mut>` so we have exclusive access to the mutable
-  reference. No need to worry about someone looking at it again.
-* Rust understands that it's ok to shard a mutable reference into the subfields
-  of the pointed-to struct, because there's no way to "go back up", and they're
-  definitely disjoint.
+* 私達は`Option<&mut>`を`take`したので，排他的な可変参照を得ることができました．
+  これによって複数回参照される心配はなくなりました．
+* Rustは，可変参照であるstructのフィールドを切り離しても大丈夫なことをわかっています．
+  切り離されたフィールドから親をたどる手段がないからです．
 
-It turns out that you can apply this basic logic to get a safe IterMut for an
-array or a tree as well! You can even make the iterator DoubleEnded, so that
-you can consume the iterator from the front *and* the back at once! Woah!
+これらの事実から，今回IterMutを実装した設計を流用して安全な配列やツリーも実装できる
+事がわかります！イテレータを双方向にして前と後ろから同時にイテレートすることすらできます！すごい！
 
 [ownership]: first-ownership.md

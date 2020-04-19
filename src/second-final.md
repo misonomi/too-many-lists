@@ -1,6 +1,6 @@
-# Final Code
+# 最終コード
 
-Alright, that's it for the second list; here's the final code!
+そんなこんなでこれが2つ目のリスト，その最終コードです！
 
 ```rust
 pub struct List<T> {
@@ -196,4 +196,4 @@ mod test {
 
 ```
 
-Getting beefier!
+使えそうな感じになってきましたね！
