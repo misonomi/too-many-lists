@@ -1,13 +1,13 @@
 # Iter
 
-Alright, let's try to implement Iter. This time we won't be able to rely on
-List giving us all the features we want. We'll need to roll our own. The
-basic logic we want is to hold a pointer to the current node we want to yield
-next. Because that node may not exist (the list is empty or we're otherwise
-done iterating), we want that reference to be an Option. When we yield an
-element, we want to proceed to the current node's `next` node.
+さて、ではIterを実装していきましょう。今回はすでにある実装に頼るわけには
+いかないので、自らの手で実装しましょう。基本的な処理は、次に返したいノード
+の一つ前のノードのポインタを握り続けることです。というのも、次に返したい
+ノードが存在しないかもしれないからです（リストが空か、最後の要素を返した後
+そういうことになります）。参照はOptionである必要がありますね。要素を返したら
+そのノードの`next`にポインタを移す処理が要ります。
 
-Alright, let's try that:
+よし、やってみましょう：
 
 ```rust ,ignore
 pub struct Iter<T> {
@@ -48,10 +48,13 @@ error[E0106]: missing lifetime specifier
    |                 ^ expected lifetime parameter
 ```
 
+ああ、寿命ね…。ライフタイムについては聞いたことがあります。悪夢のような代物
+だと言う話ですが。
 Oh god. Lifetimes. I've heard of these things. I hear they're a nightmare.
 
-Let's try something new: see that `error[E0106]` thing? That's a compiler error
-code. We can ask rustc to explain those with, well, `--explain`:
+ちょっと新しいことをやってみましょう。`error[E0106]`っていうのがありますね？
+これはコンパイラエラーコードです。これが何なのかrustcに聞くことができるオプション
+が、えっと、`--explain`です：
 
 ```text
 > rustc --explain E0106
@@ -73,9 +76,9 @@ type MyStr<'a> = &'a str; //correct
 
 ```
 
-That uh... that didn't really clarify much (these docs assume we understand
-Rust better than we currently do). But it looks like we should add
-those `'a` things to our struct? Let's try that.
+これは、その…あんまり助けになりませんね（このドキュメントは私達がいま持っている
+より深いRustへの理解を要求しています）でもこの`'a`っていうのをstructにつければ
+良さそうに見えますね？やってみましょう。
 
 ```
 pub struct Iter<'a, T> {
@@ -101,8 +104,8 @@ error[E0106]: missing lifetime specifier
 error: aborting due to 2 previous errors
 ```
 
-Alright I'm starting to see a pattern here... let's just add these little guys
-to everything we can:
+なるほど、だんだんパターンが見えてきました。このちっこいのをあらゆるところに
+つけまくってみましょう：
 
 ```rust ,ignore
 pub struct Iter<'a, T> {
@@ -148,58 +151,53 @@ error[E0063]: missing field `next` in initializer of `second::Iter<'_, _>`
    |         ^^^^ missing `next`
 ```
 
-Oh god. We broke Rust.
+あーっ。Rustが壊れてしまいました。
 
-Maybe we should actually figure out what the heck this `'a` lifetime stuff
-even means.
+多分この`'a`が一体何を意味するのか知る必要がありそうです。
 
-Lifetimes can scare off a lot of people because
-they're a change to something we've known and loved since the dawn of
-programming. We've actually managed to dodge lifetimes so far, even though
-they've been tangled throughout our programs this whole time.
+ライフタイムは沢山の人々を恐怖によって遠ざけてきました。プログラミングの
+黎明から私達が慣れ親しんできた概念を変えてしまうからです。これまでは
+なんとかライフタイムから逃れ続けてくることができましたが、実はこれまでもずっと
+私達のプログラムに絡みついていたのです。
 
-Lifetimes are unnecessary in garbage collected languages because the garbage
-collector ensures that everything magically lives as long as it needs to. Most
-data in Rust is *manually* managed, so that data needs another solution. C and
-C++ give us a clear example what happens if you just let people take pointers
-to random data on the stack: pervasive unmanageable unsafety. This can be
-roughly separated into two classes of error:
+ライフタイムはガベージコレクションを持つ言語には必要のないものです。ガベージコレクタ―
+が魔法のように全ての寿命を管理してくれるからです。Rustではほとんどのデータが
+*手動で*管理されるため、別のやり方が必要でした。CとC++から、人間にポインタを
+与えて管理させると制御不能のメモリ不安全性がはびこることがすでに分かっています。
+この不安全性の原因はおおむね次の2種類の誤りに分類できます：
 
-* Holding a pointer to something that went out of scope
-* Holding a pointer to something that got mutated away
+* スコープ外に出た物のポインタを持ち続ける
+* 変更されてしまった物のポインタを持ち続ける
 
-Lifetimes solve both of these problems, and 99% of the time, they do this in
-a totally transparent way.
+ライフタイムはどちらの問題も解決し、99%の場合透過的に処理してくれます。
 
-So what's a lifetime?
+で、ライフタイムとはなんでしょうか？
 
-Quite simply, a lifetime is the name of a region (\~block/scope) of code somewhere in a program.
-That's it. When a reference is tagged with a lifetime, we're saying that it
-has to be valid for that *entire* region. Different things place requirements on
-how long a reference must and can be valid for. The entire lifetime system is in
-turn just a constraint-solving system that tries to minimize the region of every
-reference. If it successfully finds a set of lifetimes that satisfies all the
-constraints, your program compiles! Otherwise you get an error back saying that
-something didn't live long enough.
+簡単に言うと、コードの中の特定の領域（ブロックやスコープ）のことです。終わり。
+借用がライフタイムに紐付けられたとき、その借用はそのライフタイムの*あいだじゅう*有効
+でなくてはならないことを表しています。様々な条件によって借用がどのくらい生存
+しなくてはいけないか、また生存できるかが決まります。とどのつまりライフタイムという
+仕組みは、それらの条件の中で借用の寿命を最小化する制約ソルバなのです。もし
+すべての条件を満たすライフタイムが見つかれば、コンパイルが通ります！さもなければ、
+何かの寿命が足りないというエラーが返ってくるでしょう。
 
-Within a function body you generally can't talk about lifetimes, and wouldn't
-want to *anyway*. The compiler has full information and can infer all the
-contraints to find the minimum lifetimes. However at the type and API-level,
-the compiler *doesn't* have all the information. It requires you to tell it
-about the relationship between different lifetimes so it can figure out what
-you're doing.
+一般に、関数内でのライフタイムについて言及する必要はありませんし、*何があっても*
+言及したくないはずです。コンパイラは全ての借用の寿命を知っていて、ちゃんと
+最小のライフタイムを見つけることができます。しかしAPIレベルではコンパイラは
+十分な情報を持って*いません*。なので人間がライフタイムどうしの関係を手動で教えて
+あげる必要があるのです。
 
-In principle, those lifetimes *could* also be left out, but
-then checking all the borrows would be a huge whole-program analysis that would
-produce mind-bogglingly non-local errors. Rust's system means all borrow
-checking can be done in each function body independently, and all your errors
-should be fairly local (or your types have incorrect signatures).
+原則としては、依存パッケージも含めてライフタイムをチェックすれば人間が教える必要も
+ない*はず*です。しかしそのようなチェックは膨大な処理が必要なうえ、別パッケージ
+からのエラーを生み出して精神を破壊します。Rustは全ての借用を関数ごとに独立に
+チェックし、全てのエラーをローカルからのものにとどめています（さもなければ
+あなたが宣言した型のシグネチャが誤っています）。
 
-But we've written references in function signatures before, and it was fine!
-That's because there are certain cases that are so common that Rust will
-automatically pick the lifetimes for you. This is *lifetime elision*.
+そういえば過去のコードで、借用を関数のシグネチャに書いたのにライフタイムを指定して
+いないことがありましたね。実はあれはOKです！これはRustがライフタイムを自動で割り当てて
+くれるよくあるケースで、*ライフタイムの省略*と呼ばれています。
 
-In particular:
+具体的にいうとこうです：
 
 ```rust ,ignore
 // Only one reference in input, so the output must be derived from that input
@@ -215,19 +213,19 @@ fn foo(&self, &B, &C) -> &D; // sugar for:
 fn foo<'a, 'b, 'c>(&'a self, &'b B, &'c C) -> &'a D;
 ```
 
-So what does `fn foo<'a>(&'a A) -> &'a B` *mean*? In practical terms, all it
-means is that the input must live at least as long as the output. So if you keep
-the output around for a long time, this will expand the region that the input must
-be valid for. Once you stop using the output, the compiler will know it's ok for
-the input to become invalid too.
+で`fn foo<'a>(&'a A) -> &'a B`は何を*意味する*のでしょうか？これは要するに
+fooの引数は少なくとも返り値より長いライフタイムを持たなくてはいけないことを
+意味しています。つまり、fooの返り値をずっと引き回した場合、引数に与えた
+借用もずっと生存していなくてはいけません。返り値を使うのをやめたとき、
+コンパイラは引数も解放して大丈夫と判断します。
 
-With this system set up, Rust can ensure nothing is used after free, and nothing
-is mutated while outstanding references exist. It just makes sure the
-constraints all work out!
+この仕組みがあることで、なにかのメモリ割り当てが解放された後に使われることも、
+なにかが借用されているのに変更されることも防ぐことができます。逆に言えば
+この仕組みを守るだけでそれを達成できるのです！
 
-Alright. So. Iter.
+さて、ではIterに話を戻しましょう。
 
-Let's roll back to the no lifetimes state:
+ライフタイムがないバージョンに戻しましょう：
 
 ```rust ,ignore
 pub struct Iter<T> {
@@ -251,7 +249,7 @@ impl<T> Iterator for Iter<T> {
 }
 ```
 
-We need to add lifetimes only in function and type signatures:
+ライフタイムをつけなくてはいけないのは関数と型のシグネチャです：
 
 ```rust ,ignore
 // Iter is generic over *some* lifetime, it doesn't care
@@ -285,7 +283,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
 }
 ```
 
-Alright, I think we got it this time y'all.
+おし、今回はうまく行くと思います。
 
 ```text
 cargo build
@@ -311,10 +309,10 @@ error[E0308]: mismatched types
 
 (╯°□°)╯︵ ┻━┻
 
-OK. SO. We fixed our lifetime errors but now we're getting some new type errors.
+OK。ライフタイムのエラーは直りましたが別の型エラーが出てきました。
 
-We want to be storing `&Node`'s, but we're getting `&Box<Node>`s. Ok, that's easy
-enough, we just need to dereference the Box before we take our reference:
+`&Node`を保存したいのに`&Box<Node>`が返っていると。OK。簡単です。借用の前にBox
+を外せばいいわけですね：
 
 ```rust ,ignore
 impl<T> List<T> {
@@ -364,8 +362,8 @@ error[E0507]: cannot move out of borrowed content
 
 (ﾉಥ益ಥ）ﾉ﻿ ┻━┻
 
-We forgot `as_ref`, so we're moving the box into `map`, which means it would
-be dropped, which means our references would be dangling:
+`as_ref`を忘れてました。そのせいでBoxを`map`にムーブしてしまい、値がドロップされ、
+借用がもとの値を失ってしまったのです：
 
 ```rust ,ignore
 pub struct Iter<'a, T> {
@@ -415,7 +413,7 @@ error[E0308]: mismatched types
 
 😭
 
-`as_ref` added another layer of indirection we need to remove:
+`as_ref`を使ったのでもう一段参照外しが必要になりました：
 
 
 ```rust ,ignore
@@ -448,39 +446,39 @@ cargo build
 
 🎉 🎉 🎉
 
-You may be thinking "wow that `&**` thing is really janky", and you're not wrong.
-Normally Rust is very good at doing this kind of conversion implicitly, through
-a process called *deref coercion*, where basically it can insert \*'s
-throughout your code to make it type-check. It can do this because we have the
-borrow checker to ensure we never mess up pointers!
+きっと「うわ、この`&**`とかいうのはマジでカスだな」と思ってることでしょう。あなたの
+感性は正しいです。通常Rustは*参照外し型強制*という機能でこういった操作を暗黙に
+やってくれます。参照外し型強制がすることは、基本的には\*をコード中に入れて型が
+合うようにすることです。借用チェッカがあるため、ポインタがぐちゃぐちゃになって
+いないことが分かっているのでこういうことができるのです！
 
-But in this case the closure in conjunction with the fact that we
-have an `Option<&T>` instead of `&T` is a bit too complicated for it to work
-out, so we need to do this for it. Thankfully this is pretty rare, in my experience.
+しかし、今回の場合`&T`ではなく`Option<&T>`を使っていますね。これは参照外し型強制
+が適用されるには複雑すぎるのです。私の経験上、このような形は幸運にもあまりありません。
 
-Just for completeness' sake, we *could* give it a *different* hint with the *turbofish*:
+完璧を期すために、*ターボフィッシュ*を使って*さらに*型のヒントを与えることができます：
 
 ```rust ,ignore
     self.next = node.next.as_ref().map::<&Node<T>, _>(|node| &node);
 ```
 
-See, map is a generic function:
+mapの実装を見ると、このようにジェネリックになっています：
 
 ```rust ,ignore
 pub fn map<U, F>(self, f: F) -> Option<U>
 ```
 
-The turbofish, `::<>`, lets us tell the compiler what we think the types of those
-generics should be. In this case `::<&Node<T>, _>` says "it should return a
-`&Node<T>`, and I don't know/care about that other type".
+ターボフィッシュ（`::<>`）によって、コンパイラにmapがどの型を使えばいいか
+教えることができます。この場合`::<&Node<T>, _>`によって、「`&Node<T>`を返してね、
+でも他の型はどうでもいい」ということを言っています。
 
-This in turn lets the compiler know that `&node` should have deref coercion
-applied to it, so we don't need to manually apply all those \*'s!
+すると今度はコンパイラは`&node`に参照外し型強制が適用できることがわかるので
+いちいち\*をつける必要がなくなります！
 
-But in this case I don't think it's really an improvement, this was just a
-thinly veiled excuse to show off deref coercion and the sometimes-useful turbofish. 😅
+でもこれはあんまり大きな進歩とは言えなそうですね。参照外し型強制とたまには使える
+ターボフィッシュを使いたい言い訳です😅
 
-Let's write a test to be sure we didn't no-op it or anything:
+テストを書いて、動かなくなったりとにかく悪いことが起こったりしていないことを確認
+しましょう：
 
 ```rust ,ignore
 #[test]
@@ -511,9 +509,9 @@ test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Heck yeah.
+イエ〜ィ。
 
-Finally, it should be noted that we *can* actually apply lifetime elision here:
+最後に、ここのライフタイムを省略できることに触れておきます：
 
 ```rust ,ignore
 impl<T> List<T> {
@@ -523,7 +521,7 @@ impl<T> List<T> {
 }
 ```
 
-is equivalent to:
+これは次のコードと同じです：
 
 ```rust ,ignore
 impl<T> List<T> {
@@ -533,10 +531,10 @@ impl<T> List<T> {
 }
 ```
 
-Yay fewer lifetimes!
+やった―！ライフタイムが減りました！
 
-Or, if you're not comfortable "hiding" that a struct contains a lifetime,
-you can use the Rust 2018 "explicitly elided lifetime" syntax,  `'_`:
+もしライフタイムが実際にはあるのに省略することが気になるのであれば、
+Rust2018の新機能、「ライフタイム省略明示表記」、`'_`を使うこともできます：
 
 ```rust ,ignore
 impl<T> List<T> {

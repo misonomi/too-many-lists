@@ -1,7 +1,6 @@
-# Using Option
+# Optionを使う
 
-Particularly observant readers may have noticed that we actually reinvented
-a really bad version of Option:
+特別目ざとい人は私達が劣化Optionを再発明したことに気づいたかもしれません：
 
 ```rust ,ignore
 enum Link {
@@ -10,12 +9,13 @@ enum Link {
 }
 ```
 
-Link is just `Option<Box<Node>>`. Now, it's nice not to have to write
-`Option<Box<Node>>` everywhere, and unlike `pop`, we're not exposing this
-to the outside world, so maybe it's fine. However Option has some *really
-nice* methods that we've been manually implementing ourselves. Let's *not*
-do that, and replace everything with Options. First, we'll do it naively
-by just renaming everything to use Some and None:
+Linkは`Option<Box<Node>>`と同じことです。かといって`Option<Box<Node>>`を
+どこにでも書くのは気が引けますし、`pop`の戻り値とは違いLinkは外部から
+見ることはできないので、これをLinkと呼び続けることは問題なさそうです。
+しかし、Optionには*超いい*メソッドがいくつもあり、Optionを使えば
+（私達がやったように）それらを自力で実装することもありません。なので
+全部Optionを使いましょう。まずは愚直に全部のMoreとEmptyをSomeとNoneに
+書き換えていきましょう：
 
 ```rust ,ignore
 use std::mem;
@@ -67,10 +67,11 @@ impl Drop for List {
 }
 ```
 
-This is marginally better, but the big wins will come from Option's methods.
+これは若干良くなった程度ですが、さらなる良さがOptionのメソッドを使うことで
+得られます。
 
-First, `mem::replace(&mut option, None)` is such an incredibly
-common idiom that Option actually just went ahead and made it a method: `take`.
+まず`mem::replace(&mut option, None)`はめっちゃよくある形で、
+あまりにもよくあるのでOptionにはそのための`take`というメソッドがあります。
 
 ```rust ,ignore
 pub struct List {
@@ -119,16 +120,15 @@ impl Drop for List {
 }
 ```
 
-Second, `match option { None => None, Some(x) => Some(y) }` is such an
-incredibly common idiom that it was called `map`. `map` takes a function to
-execute on the `x` in the `Some(x)` to produce the `y` in `Some(y)`. We could
-write a proper `fn` and pass it to `map`, but we'd much rather write what to
-do *inline*.
+次に`match option { None => None, Some(x) => Some(y) }`もめっちゃよくある形で、
+あまりにもよくあるので`map`というメソッドがあります。`map`には`Some(x)`の`x`
+から`Some(y)`の`y`を作る関数を渡す必要があります。`fn`で関数を宣言して渡す
+のもいいですが、*インラインで*書くほうがいいでしょう。
 
-The way to do this is with a *closure*. Closures are anonymous functions with
-an extra super-power: they can refer to local variables *outside* the closure!
-This makes them super useful for doing all sorts of conditional logic. The
-only place we do a `match` is in `pop`, so let's just rewrite that:
+そのためには*クロージャ*を使います。クロージャは、クロージャ外のローカル変数を
+参照することができる無名関数です。この強力な機能によって、条件に依存する処理を
+超簡単に書くことができます。`match`を使っているのは`pop`だけですね。書き換えて
+みましょう：
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
@@ -139,7 +139,7 @@ pub fn pop(&mut self) -> Option<i32> {
 }
 ```
 
-Ah, much better. Let's make sure we didn't break anything:
+アーイイ。今回の変更で何もぶっ壊れてないことを確認しましょう：
 
 ```text
 > cargo test
@@ -154,4 +154,4 @@ test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Great! Let's move on to actually improving the code's *behaviour*.
+いいですね！次はコードの*挙動*を改善していきましょう！

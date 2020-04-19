@@ -1,12 +1,12 @@
 # IterMut
 
-I'm gonna be honest, IterMut is WILD. Which in itself seems like a wild
-thing to say; surely it's identical to Iter!
+正直に言います。IterMutは*治安が悪い*です。この言葉が治安が悪いですが、
+IterMutはIterと明らかに同じものです！
 
-Semantically, yes, but the nature of shared and mutable references means
-that Iter is "trivial" while IterMut is Legit Wizard Magic.
+意味的にはそうですが、参照の基本原理から考えると、IterMutはガチの魔法で、
+Iterは児戯に等しいと言えます。
 
-The key insight comes from our implementation of Iterator for Iter:
+私達がIterのために実装したIteratorに注目してください：
 
 ```rust ,ignore
 impl<'a, T> Iterator for Iter<'a, T> {
@@ -16,7 +16,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
 }
 ```
 
-Which can be desugarred to:
+これはこのように書きかえることができます：
 
 ```rust ,ignore
 impl<'a, T> Iterator for Iter<'a, T> {
@@ -26,9 +26,9 @@ impl<'a, T> Iterator for Iter<'a, T> {
 }
 ```
 
-The signature of `next` establishes *no* constraint between the lifetime
-of the input and the output! Why do we care? It means we can call `next`
-over and over unconditionally!
+`next`の入力のライフタイムと出力のライフタイムの間には*何の*関係もありません。
+なぜそんなことを気にするのでしょう？これのせいで`next`を無条件に呼びまくる
+ことができるからです！
 
 
 ```rust ,ignore
@@ -41,7 +41,7 @@ let y = iter.next().unwrap();
 let z = iter.next().unwrap();
 ```
 
-Cool!
+いいですね！
 
 This is *definitely fine* for shared references because the whole point is that
 you can have tons of them at once. However mutable references *can't* coexist.

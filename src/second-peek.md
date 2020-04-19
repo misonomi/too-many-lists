@@ -1,8 +1,8 @@
 # Peek
 
-One thing we didn't even bother to implement last time was peeking. Let's go
-ahead and do that. All we need to do is return a reference to the element in
-the head of the list, if it exists. Sounds easy, let's try:
+前回実装する気もなかった機能はpeek[^1]です。これをやっていきましょう。やること
+といえば、リストのheadがあるときその参照を返せばいいだけです。簡単そうですね。
+やってみましょう：
 
 ```rust ,ignore
 pub fn peek(&self) -> Option<&T> {
@@ -31,12 +31,12 @@ error[E0507]: cannot move out of borrowed content
 
 ```
 
-*Sigh*. What now, Rust?
+ハァ〜（クソデカため息）今度はなんだよ？
 
-Map takes `self` by value, which would move the Option out of the thing it's in.
-Previously this was fine because we had just `take`n it out, but now we actually
-want to leave it where it was. The *correct* way to handle this is with the
-`as_ref` method on Option, which has the following definition:
+mapは`self`の値を取ってしまいますから、Optionの外に要素をムーブしてしまいます。
+前回は`take`した直後だったのでそれでよかったのですが、今回は値を取っておきたいので
+だめです。これに対処する*正しい*方法はOptionが持つ`as_ref`メソッドを使うことです。
+`as_ref`のシグネチャはこんな感じです：
 
 ```rust ,ignore
 impl<T> Option<T> {
@@ -44,10 +44,10 @@ impl<T> Option<T> {
 }
 ```
 
-It demotes the Option<T> to an Option to a reference to its internals. We could
-do this ourselves with an explicit match but *ugh no*. It does mean that we
-need to do an extra dereference to cut through the extra indirection, but
-thankfully the `.` operator handles that for us.
+このメソッドはT型についてのOptionを、T型の参照についてのOptionに降格させます。
+これをmatchで自前実装することもできますが*嫌です*ね。それをやろうとすると
+Optionを剥がして詰め替えることをしなくてはいけません。幸いなことにそれは`.`
+演算子がやってくれます。
 
 
 ```rust ,ignore
@@ -64,9 +64,9 @@ cargo build
     Finished dev [unoptimized + debuginfo] target(s) in 0.32s
 ```
 
-Nailed it.
+はいバッチリ
 
-We can also make a *mutable* version of this method using `as_mut`:
+これの*可変*バージョンを`as_mut`で作ることもできます：
 
 ```rust ,ignore
 pub fn peek_mut(&mut self) -> Option<&mut T> {
@@ -81,9 +81,9 @@ lists::cargo build
 
 ```
 
-EZ
+楽勝か？
 
-Don't forget to test it:
+テストも忘れず書きましょう：
 
 ```rust ,ignore
 #[test]
@@ -112,7 +112,10 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-That's nice, but we didn't really test to see if we could mutate that `peek_mut` return value, did we?  If a reference is mutable but nobody mutates it, have we really tested the mutability?  Let's try using `map` on this `Option<&mut T>` to put a profound value in:
+いいっすね。しかし、これでは`peek_mut`で取った値が本当に可変かどうか
+わかりませんよね？値が可変でも誰も変更しなかったら、可変性をテストしたと
+本当に言えるでしょうか？返り値の`Option<&mut T>`に`map`を使って全然違う値を
+突っ込んでみましょう：
 
 ```rust ,ignore
 #[test]
@@ -148,7 +151,12 @@ error[E0384]: cannot assign twice to immutable variable `value`
     |             ^^^^^^^^^^ cannot assign twice to immutable variable          ^~~~~
 ```
 
-The compiler is complaining that `value` is immutable, but we pretty clearly wrote `&mut value`; what gives? It turns out that writing the argument of the closure that way doesn't specify that `value` is a mutable reference. Instead, it creates a pattern that will be matched against the argument to the closure; `|&mut value|` means "the argument is a mutable reference, but just copy the value it points to into `value`, please."  If we just use `|value|`, the type of `value` will be `&mut i32` and we can actually mutate the head:
+コンパイラは`value`が不変だと言って怒っています。でも明らかに`&mut value`って
+書いてますよね。どゆこと？実はこの書き方はクロージャの引数が可変参照であることを
+指定していることにならないのです。そうではなく、引数に対してマッチするパターンを
+指定していることになります。`|&mut value|`は「この引数は可変参照だけど、こいつの
+値をコピーして`value`に入れてね」という意味になります。`|value|`と書くことで
+`value`の型を`&mut i32`にでき、headを変更できるようになります：
 
 ```rust ,ignore
     #[test]
@@ -184,4 +192,6 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Much better!
+かなり良くなりましたね！
+
+[^1]: 訳注：スタックの一番上の要素をpopせずに取得する（覗き見る）機能
