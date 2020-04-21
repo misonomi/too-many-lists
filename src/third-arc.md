@@ -1,68 +1,63 @@
 # Arc
 
-One reason to use an immutable linked list is to share data across threads.
-After all, shared mutable state is the root of all evil, and one way to solve
-that is to kill the *mutable* part forever.
+不変の連結リストを使う理由として，スレッド間でデータを共有したいというものがあります．
+とどのつまり，諸悪の根源は共有された可変な参照なので，この問題を解決する方法として
+*可変な*というところを永久に葬り去ってしまうという手があります．
 
-Except our list isn't thread-safe at all. In order to be thread-safe, we need
-to fiddle with reference counts *atomically*. Otherwise, two threads could
-try to increment the reference count, *and only one would happen*. Then the
-list could get freed too soon!
+私達のリストはこれっぽっちもスレッドセーフではありません．スレッドセーフにしたければ
+参照カウントを*アトミックに*する必要があります．そうでなければ2つのスレッドが同時に
+参照カウントをインクリメントしようとし，*片方だけが通る*ことがあり得ます．そうなれば
+リストはまだ参照しているノードがあるのにメモリ割り当てが解放されてしまいます！
 
-In order to get thread safety, we have to use *Arc*. Arc is completely identical
-to Rc except for the fact that reference counts are modified atomically. This
-has a bit of overhead if you don't need it, so Rust exposes both.
-All we need to do to make our list is replace every reference to Rc with
-`std::sync::Arc`. That's it. We're thread safe. Done!
+スレッドセーフにするためには*Arc*を使う必要があります．Arcはたった一つの特徴，
+参照カウントがアトミックに変更される点を除いてRcと完全に同じものです．Rcで十分な場合には
+これは若干の余分なオーバーヘッドを伴うので，ArcとRcのどちらも使えるようになっています．
+私達がすべきことはRcを`std::sync::Arc`に変えるだけです．はい，もうスレッドセーフです．
+終わり！
 
-But this raises an interesting question: how do we *know* if a type is
-thread-safe or not? Can we accidentally mess up?
+しかし，ひとつ面白い疑問が湧いてきます．どうすればある型がスレッドセーフかどうか
+知ることができるでしょうか？私達は何かやらかしてしまったのでしょうか？
 
-No! You can't mess up thread-safety in Rust!
+いいえ！Rustのスレッド安全性を脅かすことはできません！
 
-The reason this is the case is because Rust models thread-safety in a
-first-class way with two traits: `Send` and `Sync`.
+なぜなら，Rustは`Send`と`Sync`という2つのトレイトを使って，スレッド安全性を
+第一級の機能としてモデル化しているからです．
 
-A type is *Send* if it's safe to *move* to another thread. A type is *Sync* if
-it's safe to *share* between multiple threads. That is, if `T` is Sync, `&T` is
-Send. Safe in this case means it's impossible to cause *data races*, (not to
-be mistaken with the more general issue of *race conditions*).
+ある型は他のスレッドに安全に*ムーブ*できるとき*Send*を持ちます．また，複数のスレッド間で
+*共有*できるとき*Sync*を持ちます．つまり`T`がSyncのとき`&T`はSendです．ここで安全と
+言っているのは*データ競合*を防げるという意味です（*競合状態*という，さらに一般的な
+問題と取り違えないでください）．
 
-These are marker traits, which is a fancy way of saying they're traits that
-provide absolutely no interface. You either *are* Send, or you aren't. It's just
-a property *other* APIs can require. If you aren't appropriately Send,
-then it's statically impossible to be sent to a different thread! Sweet!
+この2つはマーカートレイトです．つまりインターフェースの実装はありません．ある型は
+Sendであるかそうでないかの二択です．ほかのAPIが，ある型がSendであるかチェックしたり
+して使われるものです．そしてSendでない型なら他のスレッドに送ることができなくなります！
+すごい！
 
-Send and Sync are also automatically derived traits based on whether you are
-totally composed of Send and Sync types. It's similar to how you can only
-implement Copy if you're only made of Copy types, but then we just go ahead
-and implement it automatically if you are.
+また，SendとSyncは型のフィールドが全てSendやSyncであるかどうかによって自動的に
+付与されます．Copyのときと似ていますが，自分で付与することもできる点が違います．
 
-Almost every type is Send and Sync. Most types are Send because they totally
-own their data. Most types are Sync because the only way to share data across
-threads is to put them behind a shared reference, which makes them immutable!
+ほぼ全ての型はSendでありSyncです．たいていの型は自分自身のデータを所有しており，
+したがってSendです．また，たいていの型をスレッド間で共有する方法は共有参照を
+取って不変にすることだけであり，したがってSyncです．
 
-However there are special types that violate these properties: those that have
-*interior mutability*. So far we've only really interacted with *inherited
-mutability* (AKA external mutability): the mutability of a value is inherited
-from the mutability of its container. That is, you can't just randomly mutate
-some field of a non-mutable value because you feel like it.
+しかし，なかには*内部可変性*という特徴を持ち，これらの条件に当てはまらない型があります．
+ここまで私達が見てきた可変性は*継承可変性*（もしくは外部可変性）とよばれるもので，
+値の可変性がその入れ物から継承されているものでした．継承可変性を持つ型は，不変な値の
+フィールドをなんとなく変更したりすることはできません．
 
-Interior mutability types violate this: they let you mutate through a shared
-reference. There are two major classes of interior mutability: cells, which
-only work in a single-threaded context; and locks, which work in a
-multi-threaded context. For obvious reasons, cells are cheaper when you can
-use them. There's also atomics, which are primitives that act like a lock.
+内部可変性は違います．共有参照の中にあるものを変更できるのです．内部可変性はだいたい
+2つに分けられます．単一スレッドでのみ動作するCellと，複数スレッドで動作するLockです．
+Cellのほうが低コストで使えることは明らかですね．あとはLockと似た動作をするプリミティブ型，
+atomicがあります．
 
-So what does all of this have to do with Rc and Arc? Well, they both use
-interior mutability for their *reference count*. Worse, this reference count
-is shared between every instance! Rc just uses a cell, which means it's not
-thread safe. Arc uses an atomic, which means it *is* thread safe. Of course,
-you can't magically make a type thread safe by putting it in Arc. Arc can only
-derive thread-safety like any other type.
+で，こいつらがどうRcやArcと関係するのでしょうか？実はRcもArcも*参照カウント*のために
+内部可変性を持っているのです．更に悪いことに参照カウントは全てのインスタンス間で
+共有されているのです！RcはCellをつかっており，したがってスレッドセーフではありません．
+Arcはatomicを使っているのでスレッドセーフです．とはいえ，もちろんArcの中に型を
+突っ込むことでスレッドセーフにするようなことはできず，他の型と同じようにしか
+スレッド安全性を得られません．
 
-I really really really don't want to get into the finer details of atomic
-memory models or non-derived Send implementations. Needless to say, as you get
-deeper into Rust's thread-safety story, stuff gets more complicated. As a
-high-level consumer, it all *just works* and you don't really need to think
-about it.
+私はぜっっっっったいにatomicのメモリ設計やSendを自分で実装することについて話したく
+ありません．言うまでもないことですが，Rustのスレッド安全性の話に入り込むほど話は
+複雑になっていきます．Rustを普通に使う人は，そう動くもんだと思っていればこういった
+ことについて考える必要はありません．

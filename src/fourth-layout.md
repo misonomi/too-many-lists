@@ -1,7 +1,6 @@
-# Layout
+# 設計
 
-The key to our design is the `RefCell` type. The heart of
-RefCell is a pair of methods:
+今回のキモは`RefCell`型です．RefCellの重要な部分はこの2つのメソッドです：
 
 ```rust ,ignore
 fn borrow(&self) -> Ref<'_, T>;

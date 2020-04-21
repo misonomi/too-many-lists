@@ -48,7 +48,7 @@ error[E0106]: missing lifetime specifier
    |                 ^ expected lifetime parameter
 ```
 
-ああ，寿命ね…．ライフタイムについては聞いたことがあります．悪夢のような代物
+ああ，寿命ね...．ライフタイムについては聞いたことがあります．悪夢のような代物
 だと言う話ですが．
 Oh god. Lifetimes. I've heard of these things. I hear they're a nightmare.
 
@@ -76,7 +76,7 @@ type MyStr<'a> = &'a str; //correct
 
 ```
 
-これは，その…あんまり助けになりませんね（このドキュメントは私達がいま持っている
+これは，その...あんまり助けになりませんね（このドキュメントは私達がいま持っている
 より深いRustへの理解を要求しています）でもこの`'a`っていうのをstructにつければ
 良さそうに見えますね？やってみましょう．
 
