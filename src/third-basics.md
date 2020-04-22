@@ -67,7 +67,7 @@ warning: field is never used: `next`
 
 `tail`は`append`と論理的に逆のことをします．リストを引数に取り，元のリストから
 先頭の要素を除いたリストを返します．やっていることはリストの2つ目の要素があれば
-それをCloneすることです．やってみましょう：
+それをCloneするということです．やってみましょう：
 
 ```rust ,ignore
 pub fn tail(&self) -> List<T> {
@@ -103,7 +103,7 @@ pub fn tail(&self) -> List<T> {
 
 ```
 
-天才．
+素敵．
 
 これで`tail`ができました．多分1つ目の要素を返す`head`も作ったほうがいいでしょう．
 これは`peek`と同じです：

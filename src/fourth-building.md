@@ -1,9 +1,8 @@
-# Building Up
+# 作る
 
-Alright, we'll start with building the list. That's pretty straight-forward
-with this new system. `new` is still trivial, just None out all the fields.
-Also because it's getting a bit unwieldy, let's break out a Node constructor
-too:
+ではリストを作る処理からやっていきましょう。これは素直に実装できます。
+`new`は相変わらず簡単で、単にNoneで埋めればいいだけです。ちょっと扱いにくく
+なりつつあるのでNodeのコンストラクタも作ってしまいましょう：
 
 ```rust ,ignore
 impl<T> Node<T> {
@@ -29,24 +28,23 @@ impl<T> List<T> {
 **A BUNCH OF DEAD CODE WARNINGS BUT IT BUILT**
 ```
 
-Yay!
+いえーい！
 
-Now let's try to write pushing onto the front of the list. Because
-doubly-linked lists are significantly more complicated, we're going to need
-to do a fair bit more work. Where singly-linked list operations could be
-reduced to an easy one-liner, doubly-linked list ops are fairly complicated.
+今度はリストの先頭に要素をpushする操作を書きましょう。双方向リストは
+明らかに単方向リストより複雑なのでちょっと手間をかける必要があります。
+単方向リストのときは関数を1行にすることもできましたが今回はそうは
+いきません。
 
-In particular we now need to specially handle some boundary cases around
-empty lists. Most operations will only touch the `head` or `tail` pointer.
-However when transitioning to or from the empty list, we need to edit
-*both* at once.
+とくにリストが空の場合の境界条件に対処する必要があります。大抵の処理は
+`head`と`tail`のどちらかのポインタを操作するだけでいいのですが、空リスト
+がからむと*両方*を同時に操作する必要があります。
 
-An easy way for us to validate if our methods make sense is if we maintain
-the following invariant: each node should have exactly two pointers to it.
-Each node in the middle of the list is pointed at by its predecessor and
-successor, while the nodes on the ends are pointed to by the list itself.
+メソッドが機能しているかどうかチェックするには「それぞれのノードを指すポインタが
+2つずつある」状態を保っているかを見ると簡単です。リストの間にあるノードは
+1つ前と1つ後からのポインタがあり、リストの端のノードは片方がリスト自体からの
+ポインタになりますよね。
 
-Let's take a crack at it:
+やってみましょう：
 
 ```rust ,ignore
 pub fn push_front(&mut self, elem: T) {
@@ -86,22 +84,22 @@ error[E0609]: no field `next` on type `std::rc::Rc<std::cell::RefCell<fourth::No
    |                          ^^^^ unknown field
 ```
 
-Alright. Compiler error. Good start. Good start.
+はいはい、コンパイルエラーね。まずはね。まずは。
 
-Why can't we access the `prev` and `next` fields on our nodes? It worked before
-when we just had an `Rc<Node>`. Seems like the `RefCell` is getting in the way.
+なんで`prev`と`next`を見れないのでしょうか？`Rc<Node>`だったときには動いていたので
+`RefCell`が邪魔してそうです。
 
-We should probably check the docs.
+ドキュメントを見てみるのがいいでしょう。
 
-*Google's "rust refcell"*
+*"rust refcell"でググる*
 
-*[clicks first link](https://doc.rust-lang.org/std/cell/struct.RefCell.html)*
+*[最初のリンクをクリック](https://doc.rust-lang.org/std/cell/struct.RefCell.html)*
 
 > A mutable memory location with dynamically checked borrow rules
 >
 > See the [module-level documentation](https://doc.rust-lang.org/std/cell/index.html) for more.
 
-*clicks link*
+*リンクをクリック*
 
 > Shareable mutable containers.
 >
@@ -163,16 +161,17 @@ We should probably check the docs.
 > scenarios. Consider using `Mutex<T>` if you need shared mutability in a multi-threaded
 > situation.
 
-Hey, Rust's docs continue to be incredibly awesome.
+いやー、Rustのドキュメントは相変わらずマジ最高ですね。
 
-The meaty bit we care about is this line:
+とくに注目したいのはここです：
 
 ```rust ,ignore
 shared_map.borrow_mut().insert("africa", 92388);
 ```
 
-In particular, the `borrow_mut` thing. Seems we need to explicitly borrow a
-RefCell. The `.` operator's not going to do it for us. Weird. Let's try:
+もっというと`borrow_mut`ってやつです。RefCellから借用するときは明示的に
+やらなくてはいけないようです。`.`が勝手にやってくれないのは不思議な
+仕様ですね。まあやってみましょう：
 
 ```rust ,ignore
 pub fn push_front(&mut self, elem: T) {
@@ -204,4 +203,4 @@ warning: field is never used: `elem`
    = note: #[warn(dead_code)] on by default
 ```
 
-Hey, it built! Docs win again.
+ビルドしましたよ！またドキュメント勝ちしました。

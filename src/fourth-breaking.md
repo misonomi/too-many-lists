@@ -1,7 +1,6 @@
-# Breaking Down
+# 崩す
 
-`pop_front` should be the same basic logic as `push_front`, but backwards. Let's
-try:
+`pop_front`は`push_front`と同じ処理を逆に行えばよさそうです。やってみましょう：
 
 ```rust ,ignore
 pub fn pop_front(&mut self) -> Option<T> {
@@ -35,7 +34,7 @@ error[E0609]: no field `elem` on type `std::rc::Rc<std::cell::RefCell<fourth::No
    |                      ^^^^ unknown field
 ```
 
-ACK. *RefCells*. Gotta `borrow_mut` again I guess...
+アーッ。*RefCell*か。`borrow_mut`しなきゃいけないみたいですね...
 
 ```rust ,ignore
 pub fn pop_front(&mut self) -> Option<T> {
@@ -64,21 +63,20 @@ error[E0507]: cannot move out of borrowed content
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot move out of borrowed content
 ```
 
-*sigh*
+*ため息*
 
 > cannot move out of borrowed content
 
-Hrm... It seems that Box was *really* spoiling us. `borrow_mut` only gets us
-an `&mut Node<T>`, but we can't move out of that!
+フム...私達はBoxに*めちゃくちゃ*甘えていたみたいですね。`borrow_mut`は
+`&mut Node<T>`しか返さないのでムーブすることができません！
 
-We need something that takes a `RefCell<T>` and gives us a `T`. Let's check
-[the docs][refcell] for something like that:
+`RefCell<T>`から`T`を返す何かが必要です。[ドキュメント][refcell]を見てみましょう：
 
 > `fn into_inner(self) -> T`
 >
 > Consumes the RefCell, returning the wrapped value.
 
-That looks promising!
+これっぽいですね！
 
 ```rust ,ignore
 old_head.into_inner().elem
@@ -94,27 +92,24 @@ error[E0507]: cannot move out of an `Rc`
    |             ^^^^^^^^ cannot move out of an `Rc`
 ```
 
-Ah dang. `into_inner` wants to move out the RefCell, but we can't, because it's
-in an `Rc`. As we saw in the previous chapter, `Rc<T>` only lets us get shared references
-into its internals. That makes sense, because that's *the whole point* of
-reference counted pointers: they're shared!
+あークソが。`into_inner`はRefCellをムーブしようとしますが`Rc`の中にあるので
+それはできません。前章でみた通り`Rc<T>`からは中身の共有参照しか取れません。
+でもそりゃそうですよね。参照カウンタがついた値は共有されるためのものなのですから！
 
-This was a problem for us when we wanted to implement Drop for our reference
-counted list, and the solution is the same: `Rc::try_unwrap`, which moves out
-the contents of an Rc if its refcount is 1.
+この問題を解決するためには、前回と同様`Rc::try_unwrap`を使います。参照カウントが
+1ならRcから中身を取り出すメソッドです。
 
 ```rust ,ignore
 Rc::try_unwrap(old_head).unwrap().into_inner().elem
 ```
 
-`Rc::try_unwrap` returns a `Result<T, Rc<T>>`. Results are basically a
-generalized `Option`, where the `None` case has data associated with it. In
-this case, the `Rc` you tried to unwrap. Since we don't care about the case
-where it fails (if we wrote our program correctly, it *has* to succeed), we
-just call `unwrap` on it.
+`Rc::try_unwrap`は`Result<T, Rc<T>>`を返します。Resultは`Option`を汎化したような
+もので、`None`にデータを入れられるようになったものです。この場合`None`
+の代わりに返されるものは剥こうとした`Rc`です。今回は失敗の場合を考えないので
+（プログラムを正しく書けていれば成功する*はず*です）単に`unwrap`します。
 
-Anyway, let's see what compiler error we get next (let's face it, there's going
-to be one).
+とにかく、次はどんなコンパイルエラーが出るか見てみましょう（準備はよろしいですか？
+1個はあるはずです）。
 
 ```text
 > cargo build
@@ -129,33 +124,33 @@ error[E0599]: no method named `unwrap` found for type `std::result::Result<std::
            `std::rc::Rc<std::cell::RefCell<fourth::Node<T>>> : std::fmt::Debug`
 ```
 
-UGH. `unwrap` on Result requires that you can debug-print the error case.
-`RefCell<T>` only implements `Debug` if `T` does. `Node` doesn't implement Debug.
+ぐえー。Resultを`unwrap`するにはエラーとして渡される型をデバッグ出力できる必要が
+あります。`RefCell<T>`は`T`が`Debug`を実装する場合のみデバッグ出力できますが、
+`Node`は`Debug`を実装していませんでした。
 
-Rather than doing that, let's just work around it by converting the Result to
-an Option with `ok`:
+Debugを実装するより、`ok`でResultをOptionに変換してしまう方がいいでしょう：
 
 ```rust ,ignore
 Rc::try_unwrap(old_head).ok().unwrap().into_inner().elem
 ```
 
-PLEASE.
+頼む！！！
 
 ```text
 cargo build
 
 ```
 
-YES.
+や　っ　た　ぜ
 
-*phew*
+*フゥ*
 
-We did it.
+やりました。
 
-We implemented `push` and `pop`.
+`push`と`pop`ができました。
 
-Let's test by stealing the old `stack` basic test (because that's all that
-we've implemented so far):
+はじめに作ったリストと実装した機能が同じなので、そっちからテストコードを
+盗んできてテストしましょう：
 
 ```rust ,ignore
 #[cfg(test)]
@@ -213,8 +208,10 @@ test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-*Nailed it*.
+*はいバッチリ*
 
+これでリストから要素を取り除けるのでDropの実装に移れます。今回のDropはすこし
+おもしろいことになっています。というのも、これまでDropを実装するに際し
 Now that we can properly remove things from the list, we can implement Drop.
 Drop is a little more conceptually interesting this time around. Where
 previously we bothered to implement Drop for our stacks just to avoid unbounded

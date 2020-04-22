@@ -27,7 +27,7 @@
 * [メモリ安全クソ両端キュー](fourth.md)
     * [設計](fourth-layout.md)
     * [作る](fourth-building.md)
-    * [壊す](fourth-breaking.md)
+    * [崩す](fourth-breaking.md)
     * [Peek](fourth-peek.md)
     * [対象的な操作の実装](fourth-symmetry.md)
     * [Iteration](fourth-iteration.md)

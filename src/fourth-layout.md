@@ -6,26 +6,24 @@
 fn borrow(&self) -> Ref<'_, T>;
 fn borrow_mut(&self) -> RefMut<'_, T>;
 ```
+`borrow`と`borrow_mut`の関係は`&`と`&mut`の関係と全く同じです。 `borrow`は
+好きなだけ呼ぶことができますが`borrow_mut`は排他的にしか呼べません。
 
-The rules for `borrow` and `borrow_mut` are exactly those of `&` and `&mut`:
-you can call `borrow` as many times as you want, but `borrow_mut` requires
-exclusivity.
+RefCellはこの条件をコンパイルタイムではなくランタイムにチェックします。
+もしルールが守られなければRefCellはパニックを起こし、プログラムは
+クラッシュします。ところで、このRefとかRefMutとかいう型はなんでしょう？
+これは基本的には借用のために使われるRcみたいなもので、これがスコープ外
+に出るまでRefCellは借用されたままになります。これについては後で触れます。
 
-Rather than enforcing this statically, RefCell enforces them at runtime.
-If you break the rules, RefCell will just panic and crash the program.
-Why does it return these Ref and RefMut things? Well, they basically behave
-like `Rc`s but for borrowing. They also keep the RefCell borrowed until they go out
-of scope. We'll get to that later.
+そしてRcとRefCellを使えば私達は...ビビるほど冗長であちこち可変だしサイクルを
+解放できないガベージコレクタを作れます！イエェェェェィ...
 
-Now with Rc and RefCell we can become... an incredibly verbose pervasively
-mutable garbage collected language that can't collect cycles! Y-yaaaaay...
+はい。今回は*双方向連結*でやっていきたいんでした。これはそれぞれのノードが
+一つ前と一つ次のノードを指すポインタを持っていることを意味しています。更に
+リスト自身ははじめのノードと最後のノードのポインタを持ちます。これによって
+はじめの要素と最後の要素の*両方*に対して高速な挿入と削除が行えます。
 
-Alright, we want to be *doubly-linked*. This means each node has a pointer to
-the previous and next node. Also, the list itself has a pointer to the
-first and last node. This gives us fast insertion and removal on *both*
-ends of the list.
-
-So we probably want something like:
+なので、多分私達が作りたいのはこんな感じのものでしょう：
 
 ```rust ,ignore
 use std::rc::Rc;
@@ -81,4 +79,5 @@ warning: field is never used: `prev`
    |     ^^^^^^^^^^^^^
 ```
 
-Hey, it built! Lots of dead code warnings, but it built! Let's try to use it.
+見てください！ビルドしました！未使用コードの警告はありますが
+ビルドは通っています！ではこのコードを使っていきましょう。
