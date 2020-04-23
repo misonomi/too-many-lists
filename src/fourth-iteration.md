@@ -1,11 +1,10 @@
-# Iteration
+# イテレート
 
-Let's take a crack at iterating this bad-boy.
+この悪い子をイテレートしていきましょう．
 
 ## IntoIter
 
-IntoIter, as always, is going to be the easiest. Just wrap the stack and
-call `pop`:
+いつものようにIntoIterが一番楽です．スタックでラップして`pop`を呼びましょう：
 
 ```rust ,ignore
 pub struct IntoIter<T>(List<T>);
@@ -24,27 +23,23 @@ impl<T> Iterator for IntoIter<T> {
 }
 ```
 
-But we have an interesting new development. Where previously there was only
-ever one "natural" iteration order for our lists, a Deque is inherently
-bi-directional. What's so special about front-to-back? What if someone wants
-to iterate in the other direction?
+でもちょっとおもしろいことが起こっています．前はリストをイテレートする「自然な」方向が
+一意に決まっていましたが，両端キューには2つあります．もし逆方向にイテレートしたい人が
+いたらどうしたらいいでしょうか？
 
-Rust actually has an answer to this: `DoubleEndedIterator`. DoubleEndedIterator
-*inherits* from Iterator (meaning all DoubleEndedIterator are Iterators) and
-requires one new method: `next_back`. It has the exact same signature as
-`next`, but it's supposed to yield elements from the other end. The semantics
-of DoubleEndedIterator are super convenient for us: the iterator becomes a
-deque. You can consume elements from the front and back until the two ends
-converge, at which point the iterator is empty.
+じつはRustにはそのための`DoubleEndedIterator`トレイトがあります．DoubleEndedIterator
+はIteratorを*継承*し（これは全てのDoubleEndedIteratorがIteratorsであることを意味します），
+`next_back`というメソッドの実装を必要とします．このメソッドは`next`と全く同じシグネチャ
+を持ちますが，逆側の要素を返すようになっています．DoubleEndedIteratorを使えば簡単に
+イテレータを両端キューにして，イテレータが空になるまで前からでも後ろからでも要素を
+取り出すことができます．
 
-Much like Iterator and `next`, it turns out that `next_back` isn't really
-something consumers of the DoubleEndedIterator really care about. Rather, the
-best part of this interface is that it exposes the `rev` method, which wraps
-up the iterator to make a new one that yields the elements in reverse order.
-The semantics of this are fairly straight-forward: calls to `next` on the
-reversed iterator are just calls to `next_back`.
+`next_back`はDoubleEndedIteratorを使う人にとってそれほど重要なメソッドではありません．
+それより，イテレータを逆順にして返す`rev`メソッドがあることのほうが重要です．この
+メソッドのやっていることはとてもシンプルです．逆順になったイテレータで呼ばれる`next`は
+代わりに`next_back`が呼ばれるというだけです．
 
-Anyway, because we're already a deque providing this API is pretty easy:
+なんにせよ私達のリストはすでに両端キューなので，これの実装は超簡単です：
 
 ```rust ,ignore
 impl<T> DoubleEndedIterator for IntoIter<T> {
@@ -54,7 +49,7 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 }
 ```
 
-And let's test it out:
+そしてテストします：
 
 ```rust ,ignore
 #[test]
@@ -94,13 +89,13 @@ test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Nice.
+イエーイ．
 
 ## Iter
 
-Iter will be a bit less forgiving. We'll have to deal with those awful `Ref`
-things again! Because of Refs, we can't store `&Node`s like we did before.
-Instead, let's try to store `Ref<Node>`s:
+Iterはもうすこし厳しいです．またあの恐ろしい`Ref`と向き合わなくてはいけません！
+Refのせいでこれまでのように`&Node`を保持するわけにはいきません．代わりに`Ref<Node>`
+を保持します：
 
 ```rust ,ignore
 pub struct Iter<'a, T>(Option<Ref<'a, Node<T>>>);
@@ -117,9 +112,8 @@ impl<T> List<T> {
 
 ```
 
-So far so good. Implementing `next` is going to be a bit hairy, but I think
-it's the same basic logic as the old stack IterMut but with extra RefCell
-madness:
+ここまでは順調です．`next`の実装はちょっと難しいですが，これまでのIterMutの実装に
+RefCellの狂気を添えた感じで行けると思います：
 
 ```rust ,ignore
 impl<'a, T> Iterator for Iter<'a, T> {
@@ -161,16 +155,15 @@ error[E0505]: cannot move out of `node_ref` because it is borrowed
     |                      ^^^^^^^^ move out of `node_ref` occurs here
 ```
 
-Shoot.
+クソが．
 
-`node_ref` doesn't live long enough. Unlike normal references, Rust doesn't let
-us just split Refs up like that. The Ref we get out of `head.borrow()` is only
-allowed to live as long as `node_ref`, but we end up trashing that in our
-`Ref::map` call.
+`node_ref`のライフタイムが十分ではないようです．普通の参照と違って，Refをこんなふうに
+分割することはできないようです．`head.borrow()`でとったRefは`node_ref`が生きている
+間しか生きられませんが，私達は`Ref::map`で`node_ref`を捨てています．
 
-Coincidentally, as of the moment I am writing this, the function we want was
-actually stabilized 2 days ago. That means it will be a few months before it
-hits the stable release. So let's continue along with the latest nightly build:
+偶然にも私がこれを書いているとき，私達が使いたい関数が2日前に安定化されました．つまり
+あと数ヶ月でstableリリースに含まれることになります．なので最新のnightlyビルドを
+使っていきましょう[^1]：
 
 ```rust ,ignore
 pub fn map_split<U, V, F>(orig: Ref<'b, T>, f: F) -> (Ref<'b, U>, Ref<'b, V>) where
@@ -179,7 +172,7 @@ pub fn map_split<U, V, F>(orig: Ref<'b, T>, f: F) -> (Ref<'b, U>, Ref<'b, V>) wh
     V: ?Sized,
 ```
 
-Woof. Let's give it a try...
+ウーッ．やってみましょう...
 
 ```rust ,ignore
 fn next(&mut self) -> Option<Self::Item> {
@@ -210,11 +203,11 @@ error[E0521]: borrowed data escapes outside of closure
     |             reference to `next` escapes the closure body here
 ```
 
-Ergh. We need to `Ref::Map` again to get our lifetimes right. But `Ref::Map`
-returns a `Ref` and we need an `Option<Ref>`, but we need to go through the
-Ref to map over our Option...
+えー．ライフタイムのつじつまを合わせるためにもう1回`Ref::Map`する必要がありますが，
+私達が欲しいのは`Option<Ref>`であって`Ref::Map`から返る`Ref`ではありません．しかし
+OptionをmapするにはRefの中を見る必要があります...
 
-**stares into distance for a long time**
+**（しばらく虚空を見つめる）**
 
 ??????
 
@@ -247,18 +240,15 @@ error[E0308]: mismatched types
                found type `std::cell::Ref<'_, std::cell::RefCell<fourth::Node<_>>>`
 ```
 
-Oh. Right. There's multiple RefCells. The deeper we walk into the list, the more
-nested we become under each RefCell. We would need to maintain, like, a stack of
-Refs to represent all the outstanding loans we're holding, because if we stop
-looking at an element we need to decrement the borrow-count on every RefCell that
-comes before it.................
+あーそうですね．RefCellが二重になっています．リストを深く探索すればするほどRefCellが
+ネストしていってしまいます．複数の参照を一気にカウントしてくれるRefみたいなものが必要
+です．リストの要素を解放したとき，それまでネストしてきた参照カウントを一気に1つづつ
+デクリメントしてくれるような何か.............
 
-I don't think there's anything we can do here. It's a dead end. Let's try
-getting out of the RefCells.
+もうなにか手が残っているとは思えません．終わりです．RefCellから離れて考えてみましょう．
 
-What about our `Rc`s. Who said we even needed to store references?
-Why can't we just Clone the whole Rc to get a nice owning handle into the middle
-of the list?
+Rcを使うというのはどうでしょう．参照を保持する必要なんかありませんよね？単にRcを
+Cloneして所有権を管理させるのではダメでしょうか？
 
 ```rust
 pub struct Iter<T>(Option<Rc<Node<T>>>);
@@ -273,13 +263,13 @@ impl<T> Iterator for Iter<T> {
     type Item =
 ```
 
-Uh... Wait what do we return now? `&T`? `Ref<T>`?
+えっと...待ってください，ここの型は何でしょう？`&T`？`Ref<T>`？
 
-No, none of those work... our Iter doesn't have a lifetime anymore! Both `&T`
-and `Ref<T>` require us to declare some lifetime up front before we get into
-`next`. But anything we manage to get out of our Rc would be borrowing the
-Iterator... brain... hurt... aaaaaahhhhhh
+だめです，どっちもうまくいきません...私達のIterはもはやライフタイムを持っていないのです！
+`&T`も`Ref<T>`も`next`する際にライフタイムが必要です．でもRcから出そうとするものは
+Iteratorを借用します...ウッ，頭が...痛い...ぐあああああああああ
 
+多分Rcを...mapして...`Rc<T>`にする？
 Maybe we can... map... the Rc... to get an `Rc<T>`? Is that a thing? Rc's docs
 don't seem to have anything like that. Actually someone made [a crate][own-ref]
 that lets you do that.
@@ -328,3 +318,5 @@ writing safe *applications*. Not so much safe *libraries*.
 Anyway, that's me giving up on Iter and IterMut. We could do them, but *ugh*.
 
 [own-ref]: https://crates.io/crates/owning_ref
+
+[^1]: 訳注：これは原文が書かれた当時の話で，当該関数はとっくにstableに入っています．したがって必ずしもnightlyを使う必要はありません

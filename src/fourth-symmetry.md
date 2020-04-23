@@ -1,8 +1,8 @@
-# Symmetric Junk
+# 対称的な操作
 
-Alright let's get all that combinatoric symmetry over with.
+それじゃあ対称なメソッドをやっつけてしまいましょう．
 
-All we have to do is some basic text replacement:
+すべきことは文字列置換だけです．
 
 ```text
 tail <-> head
@@ -10,7 +10,7 @@ next <-> prev
 front -> back
 ```
 
-Oh, also we need to add `_mut` variants for peeking.
+あ，あとpeekの`_mut`バージョンもいりますね．
 
 ```rust ,ignore
 pub fn push_back(&mut self, elem: T) {
@@ -62,7 +62,7 @@ pub fn peek_front_mut(&mut self) -> Option<RefMut<T>> {
 }
 ```
 
-And massively flesh out our tests:
+そしてめっちゃテストを書きます：
 
 
 ```rust ,ignore
@@ -138,8 +138,9 @@ fn peek() {
 }
 ```
 
-Are there some cases we're not testing? Probably. The combinatoric space
-has really blown up here. Our code is at very least not *obviously wrong*.
+テスト漏れはあるでしょうか？多分あります．メソッド同士の組み合わせ空間は
+めちゃくちゃ大きいです．でも少なくとも私達のコードは*明らかに間違ってる*
+わけではないです．
 
 ```text
 > cargo test
@@ -162,4 +163,4 @@ test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Nice. Copy-pasting is the best kind of programming.
+いいですね．コピペこそが最高のプログラミングです．

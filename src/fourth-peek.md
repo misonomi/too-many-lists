@@ -1,14 +1,14 @@
-# Peeking
+# Peek
 
-Alright, we made it through `push` and `pop`. I'm not gonna lie, it got a
-bit emotional there. Compile-time correctness is a hell of a drug.
+さて，`push`と`pop`を実装しました．私はちょっと感動してます．マジで．コンパイル時
+の正確性があるというのは病みつきになりそうです．
 
-Let's cool off by doing something simple: let's just implement `peek_front`.
-That was always really easy before. Gotta still be easy, right?
+簡単な`peek_front`でも実装して落ち着きましょう．いままでこのメソッドは簡単でしたし
+今回も簡単なはずです．そうですよね？
 
-Right?
+そうですよね？
 
-In fact, I think I can just copy-paste it!
+実際コピペで済みそうです！
 
 ```rust ,ignore
 pub fn peek_front(&self) -> Option<&T> {
@@ -18,7 +18,7 @@ pub fn peek_front(&self) -> Option<&T> {
 }
 ```
 
-Wait. Not this time.
+ちょっと待った．今回はこうです．
 
 ```rust ,ignore
 pub fn peek_front(&self) -> Option<&T> {
@@ -29,7 +29,7 @@ pub fn peek_front(&self) -> Option<&T> {
 }
 ```
 
-HAH.
+どうよ．
 
 ```text
 cargo build
@@ -45,55 +45,50 @@ error[E0515]: cannot return value referencing temporary value
    |             returns a value referencing data owned by the current function
 ```
 
-Ok I'm just burning my computer.
+PC燃やしました．
 
-This is exactly the same logic as our singly-linked stack. Why are things
-different. WHY.
+単方向リストのときと同じロジックだろ．なんで違うんだ．なんで...
 
-The answer is really the whole moral of this chapter: RefCells make everything
-sadness. Up until now, RefCells have just been a nuisance. Now they're going to
-become a nightmare.
+その答えはこの章から得られる教訓そのものです．その教訓とは，RefCellはあらゆるものに
+悲しみをもたらす存在であるということです．これまでRefCellはただの困ったちゃんでしたが，
+悪夢と化しつつあります．
 
-So what's going on? To understand that, we need to go back to the definition of
-`borrow`:
+実際のところ何がどうなってるのでしょうか？それを理解するために`borrow`の定義をもう一度
+見てみましょう：
 
 ```rust ,ignore
 fn borrow<'a>(&'a self) -> Ref<'a, T>
 fn borrow_mut<'a>(&'a self) -> RefMut<'a, T>
 ```
 
-In the layout section we said:
+設計の節でこのように書きました：
 
-> Rather than enforcing this statically, RefCell enforces them at runtime.
-> If you break the rules, RefCell will just panic and crash the program.
-> Why does it return these Ref and RefMut things? Well, they basically behave
-> like `Rc`s but for borrowing. Also they keep the RefCell borrowed until they go out
-> of scope. **We'll get to that later.**
+> RefCellはこの条件をコンパイルタイムではなくランタイムにチェックします。
+> もしルールが守られなければRefCellはパニックを起こし、プログラムは
+> クラッシュします。ところで、このRefとかRefMutとかいう型はなんでしょう？
+> これは基本的には借用のために使われるRcみたいなもので、これがスコープ外
+> に出るまでRefCellは借用されたままになります。**これについては後で触れます。**
 
-It's later.
+今がその「後」です．
 
-`Ref` and `RefMut` implement `Deref` and `DerefMut` respectively. So for most
-intents and purposes they behave *exactly* like `&T` and `&mut T`. However,
-because of how those traits work, the reference that's returned is connected
-to the lifetime of the Ref, and not the actual RefCell. This means that the Ref
-has to be sitting around as long as we keep the reference around.
+`Ref`と`RefMut`はそれぞれ`Deref`と`DerefMut`を実装しています．これらは`&T`，`&mut T`
+と*全く*同じ動作をするようになっているのですが，トレイトの実装上，戻り値のライフタイムは
+RefCellではなくRefに紐付けられるようになっています．つまり戻り値の参照を使い続ける
+間ずっとRefを生かしておかなくてはいけないということになります．
 
-This is in fact necessary for correctness. When a Ref gets dropped, it tells
-the RefCell that it's not borrowed anymore. So if we *did* manage to hold onto our
-reference longer than the Ref existed, we could get a RefMut while a reference
-was kicking around and totally break Rust's type system in half.
+実はこれは整合性を取るためには必要なことです．Refがdropされれば，RefCellはもうそれを
+借用しているものはないと判断してしまします．なのでもしRefより長く中の参照を持ち続け
+ることができてしまったら，RefMutの排他性が損なわれRustの型システムを半壊させてしまいます．
 
-So where does that leave us? We only want to return a reference, but we need
-to keep this Ref thing around. But as soon as we return the reference from
-`peek`, the function is over and the `Ref` goes out of scope.
+結局どうしたらいいのでしょうか？ただ参照を返したいだけなのですが，参照を持ち続ける限り
+Refを持ち続けなくてはいけません．そして`peek`がreturnしたとき`Ref`はスコープ外に
+行ってしまいます．
 
 😖
 
-As far as I know, we're actually totally dead in the water here. You can't
-totally encapsulate the use of RefCells like that.
+私が知る限りこれは手詰まりです．今回のような場合RefCellをカプセル化することはできないのです．
 
-But... what if we just give up on totally hiding our implementation details?
-What if we returns Refs?
+でも...もし実装の隠蔽を諦めたらどうでしょうか？Refを返したらどうなるのでしょう？
 
 ```rust ,ignore
 pub fn peek_front(&self) -> Option<Ref<T>> {
@@ -119,7 +114,7 @@ help: possible candidates are found in other modules, you can import them into s
    |
 ```
 
-Blurp. Gotta import some stuff.
+ぶっは．importしなきゃいけませんね．
 
 
 ```rust ,ignore
@@ -141,15 +136,14 @@ error[E0308]: mismatched types
               found type `std::option::Option<std::cell::Ref<'_, fourth::Node<T>>>`
 ```
 
-Hmm... that's right. We have a `Ref<Node<T>>`, but we want a `Ref<T>`. We could
-abandon all hope of encapsulation and just return that. We could also make
-things even more complicated and wrap `Ref<Node<T>>` in a new type to only
-expose access to an `&T`.
+うーん...確かに．`Ref<Node<T>>`を返していますが欲しいのは`Ref<T>`です．全てを諦めて
+`Ref<Node<T>>`を返すというのも手ですし，`&T`にだけアクセスできるような型で`Ref<Node<T>>`
+をラップし事態を更に複雑化させるという手もあります．
 
-Both of those options are *kinda* lame.
+どちらも*まあまあ*ダサいですね．
 
-Instead, we're going to go deeper down. Let's
-have some *fun*. Our source of fun is *this beast*:
+かわりにさらなる深淵を覗きましょう．*楽しもう*じゃないですか．楽しみの種はこの
+*やべーやつ*です：
 
 ```rust ,ignore
 map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
@@ -159,12 +153,13 @@ map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
 
 > Make a new Ref for a component of the borrowed data.
 
-Yes: just like you can map over an Option, you can map over a Ref.
+そう，Option同様Refもmapできるのです．
 
-I'm sure someone somewhere is really excited because *monads* or whatever but
-I don't care about any of that. Also I don't think it's a proper monad since
-there's no None-like case, but I digress.
+どこかの誰かは*モナド*とか何とか言って興奮しているかと思いますが，私にはどうでもいい
+ことです．あとこのメソッドはNothingのケースを持たないので厳密にはモナドではないと
+思います．話がそれました．
 
+このメソッドはイカすということだけが重要です．*使わせろ*．
 It's cool and that's all that matters to me. *I need this*.
 
 ```rust ,ignore
@@ -179,10 +174,10 @@ pub fn peek_front(&self) -> Option<Ref<T>> {
 > cargo build
 ```
 
-Awww yissss
+やっっっった．
 
-Let's make sure this is working by munging up the test from our stack. We need
-to do some munging to deal with the fact that Refs don't implement comparisons.
+ちゃんと動いていることを，スタックのときに実装したテストを修正して確認しましょう．Ref
+同士の比較はできないのでちょっと修正が必要です．
 
 ```rust ,ignore
 #[test]
@@ -217,4 +212,4 @@ test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Great!
+やりました！

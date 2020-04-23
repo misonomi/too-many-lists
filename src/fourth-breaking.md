@@ -211,21 +211,18 @@ test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured
 *はいバッチリ*
 
 これでリストから要素を取り除けるのでDropの実装に移れます。今回のDropはすこし
-おもしろいことになっています。というのも、これまでDropを実装するに際し
-Now that we can properly remove things from the list, we can implement Drop.
-Drop is a little more conceptually interesting this time around. Where
-previously we bothered to implement Drop for our stacks just to avoid unbounded
-recursion, now we need to implement Drop to get *anything* to happen at all.
+おもしろいことになっています。というのも、これまでDropを実装するに際し再帰が
+起こらないようにがんばる必要がありましたが，今回はとにかく*何か*が起こるように
+がんばる必要があります．
 
-`Rc` can't deal with cycles. If there's a cycle, everything will keep everything
-else alive. A doubly-linked list, as it turns out, is just a big chain of tiny
-cycles! So when we drop our list, the two end nodes will have their refcounts
-decremented down to 1... and then nothing else will happen. Well, if our list
-contains exactly one node we're good to go. But ideally a list should work right
-if it contains multiple elements. Maybe that's just me.
+`Rc`はサイクルを解放できません．サイクルがあるとそれぞれがそれぞれを生かし続けてしまします．
+双方向リストは，何と小さいサイクルを大量に集めたものに他なりません！双方向リストをDropしようと
+すると，端の2つのノードの参照カウントが1に減り...それ以上何も起こりません．ノードが1つだけ
+なら上手くいきますが，リストには複数の要素を持つときにも動いてほしいですね．多分それは
+私だけでしょう．
 
-As we saw, removing elements was a bit painful. So the easiest thing for us to
-do is just `pop` until we get None:
+すでに見たように，要素を削除するのはちょっと面倒です．一番簡単な方法はNoneが出るまで
+`pop`し続けることでしょう：
 
 ```rust ,ignore
 impl<T> Drop for List<T> {
@@ -240,12 +237,11 @@ cargo build
 
 ```
 
-(We actually could have done this with our mutable stacks, but shortcuts are for
-people who understand things!)
+（実は可変なリストのときもこれと同じようにできたのですが，近道はちゃんと理解している人の
+ためのものです！）
 
-We could look at implementing the `_back` versions of `push` and `pop`, but
-they're just copy-paste jobs which we'll defer to later in the chapter. For now
-let's look at more interesting things!
+逆方向からの`push`と`pop`の実装について見ていってもいいですが，ただのコピペなので
+後回しにします．先にもっと面白いものを見ていきましょう！
 
 
 [refcell]: https://doc.rust-lang.org/std/cell/struct.RefCell.html
