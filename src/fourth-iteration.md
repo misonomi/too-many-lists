@@ -269,54 +269,49 @@ impl<T> Iterator for Iter<T> {
 `&T`も`Ref<T>`も`next`する際にライフタイムが必要です．でもRcから出そうとするものは
 Iteratorを借用します...ウッ，頭が...痛い...ぐあああああああああ
 
-多分Rcを...mapして...`Rc<T>`にする？
-Maybe we can... map... the Rc... to get an `Rc<T>`? Is that a thing? Rc's docs
-don't seem to have anything like that. Actually someone made [a crate][own-ref]
-that lets you do that.
+多分Rcを...mapして...`Rc<T>`にする？本当か？Rcのドキュメントを見る限りそういうことを
+するメソッドはなさそうです．実際これをできるようにする[クレート][own-ref]を作った人がいます．
 
-But wait, even if we do *that* then we've got an even bigger problem: the
-dreaded spectre of iterator invalidation. Previously we've been totally immune
-to iterator invalidation, because the Iter borrowed the list, leaving it totally
-immutable. However if our Iter was yielding Rcs, they wouldn't borrow the list
-at all! That means people can start calling `push` and `pop` on the list while
-they hold pointers into it!
+でも待ってください．かりに*それ*をやったとしてもさらに大きな問題に直面します．イテレータ
+破壊という恐ろしい現象です．これまで私達はイテレータ破壊に対して完全に無敵でした．
+なぜならIterはリストを借用するだけなので，それに変更を加えないからです．しかし，もし
+IterがRcを返すならそれは借用に留まりません！これによってリストの利用者はポインタを持ち
+続ける限り`push`や`pop`を呼べてしまえます！
 
-Oh lord, what will that do?!
+おお神よ！いったいどうすればいいのですか！？
 
-Well, pushing is actually fine. We've got a view into some sub-range of the
-list, and the list will just grow beyond our sights. No biggie.
+えっと，実はpushは無問題です．私達の見えている範囲よりリストの全体が大きくなる
+だけです．大したことありません．
 
-However `pop` is another story. If they're popping elements outside of our
-range, it should *still* be fine. We can't see those nodes so nothing will
-happen. However if they try to pop off the node we're pointing at... everything
-will blow up! In particular when they go to `unwrap` the result of the
-`try_unwrap`, it will actually fail, and the whole program will panic.
+でも`pop`は話が別です．もし私達の知らないところでpopが行われても*まだ*大丈夫です．
+もともとそのノードは私達の知らない所にあるので何も起こりません．しかし，もし私達
+に見えているノードがpopされれば...全てがぶっ壊れます！具体的には`try_unwrap`の
+結果を`unwrap`しようとしたときにpanicするでしょう．
 
-That's actually pretty cool. We can get tons of interior owning pointers into
-the list and mutate it at the same time *and it will just work* until they
-try to remove the nodes that we're pointing at. And even then we don't get
-dangling pointers or anything, the program will deterministically panic!
+これは実際かなりイケてます．リストを指すポインタを持つイテレータをいくらでも生成
+できて，他が指しているノードを削除しようとしない限り*ともかく正常に動作する*のですから．
+しかもそのような削除が発生したときにも，宙吊りのポインタを生むこともなくしっかり
+パニックしてくれるのです！
 
-But having to deal with iterator invalidation on top of mapping Rcs just
-seems... bad. `Rc<RefCell>` has really truly finally failed us. Interestingly,
-we've experienced an inversion of the persistent stack case. Where the
-persistent stack struggled to ever reclaim ownership of the data but could get
-references all day every day, our list had no problem gaining ownership, but
-really struggled to loan our references.
+でもRcのマップをするためにイテレータ破壊に対処しなくてはいけないのはなんというか...
+よくありません．私達は`Rc<RefCell>`に完膚無きまでに絶望させられました．面白いことに
+いま私達は永続スタックのときの逆を体験しています．永続スタックのとき，私達はデータの
+所有権を得ようと苦闘しましたが参照はほぼいつでも得ることができました．今回は所有権
+を得るのは問題ありませんでしたが参照を貸し出すのに苦労しています．
 
-Although to be fair, most of our struggles revolved around wanting to hide the
-implementation details and have a decent API. We *could* do everything fine
-if we wanted to just pass around Nodes all over the place.
+とはいえ，公平に言って，私達が苦労している理由は実装の詳細を隠蔽し洗練されたAPIを
+提供しようとしているからと言えるでしょう．もしNodeをどこにでも渡すようにすれば
+すべてうまくやれたでしょう．
 
-Heck, we could make multiple concurrent IterMuts that were runtime checked to
-not be mutable accessing the same element!
+そうすればランタイムに同時に同じ要素が変更されないことを保証する並列IterMutすら
+実装することができます！
 
-Really, this design is more appropriate for an internal data structure that
-never makes it out to consumers of the API. Interior mutability is great for
-writing safe *applications*. Not so much safe *libraries*.
+本当にこの設計は内部のデータ構造を隠蔽するAPIに向いてませんね．内部可変性は安全な
+*アプリケーション*を書くには適していますが，安全な*ライブラリ*をかくためには
+それほど有用ではありません．
 
-Anyway, that's me giving up on Iter and IterMut. We could do them, but *ugh*.
+ともかくIterとIterMutは諦めます．実装できることはできますが，やりたくありません．
 
 [own-ref]: https://crates.io/crates/owning_ref
 
-[^1]: 訳注：これは原文が書かれた当時の話で，当該関数はとっくにstableに入っています．したがって必ずしもnightlyを使う必要はありません
+[^1]: 訳注：これは原文が書かれた当時の話で，当該関数はとっくにstableに入っています．したがってこのためにnightlyを使う必要はありません

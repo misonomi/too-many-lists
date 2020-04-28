@@ -1,16 +1,14 @@
-# An Unsafe Singly-Linked Queue
+# 不安全な片方向キュー
 
-Ok that reference-counted interior mutability stuff got a little out of
-control. Surely Rust doesn't really expect you to do that sort of thing
-in general? Well, yes and no. Rc and Refcell can be great for handling
-simple cases, but they can get unwieldy. Especially if you
-want to hide that it's happening. There's gotta be a better way!
+えー，前回の参照カウントと内部可変性をつかったリストは少し私達の手に余りました．
+もちろんRustではああいったことを一般的に想定してませんよね？答えはYESでありNOです．
+RcとRefCellは簡単なものを扱う場合は素晴らしい型ですがたまに扱いにくいです．
+何が起こってるか隠蔽したい場合には特に．もっといい方法があるはずです！
 
-In this chapter we're going to roll back to singly-linked lists and
-implement a singly-linked queue to dip our toes into *raw pointers*
-and *Unsafe Rust*.
+この章では単方向リストを再び扱い，その実装を通してちょっとだけ*生のポインタ*
+と*不安全なRust*に触れます．
 
-Let's add a new file called `fifth.rs`:
+`fifth.rs`という新しいファイルを作りましょう：
 
 ```rust ,ignore
 // in lib.rs
@@ -22,7 +20,6 @@ pub mod fourth;
 pub mod fifth;
 ```
 
-Our code is largely going to be derived from second.rs, since a queue is
-mostly an augmentation of a stack in the world of linked lists. Still, we're
-going to go from scratch because there's some fundamental issues we want to
-address with layout and what-not.
+連結リストの形を取る場合キューはほとんどスタックを拡張したものなので，ほとんどの
+コードをsecond.rsを元にして書くことができます．でも，設計などの基本的な問題があるので
+何もない状態から始めたいと思います．

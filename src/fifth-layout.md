@@ -1,9 +1,8 @@
-# Layout
+# 設計
 
-So what's a singly-linked queue like? Well, when we had a singly-linked stack
-we pushed onto one end of the list, and then popped off the same end. The only
-difference between a stack and a queue is that a queue pops off the *other*
-end. So from our stack implementation we have:
+で，片方向キューとは何でしょうか？片方向スタックのとき，私達はリストの最後にpushして
+同じ方向からpopしました．キューとスタックの違いはpopするのが逆側からであることだけです．
+スタックのときはこんな感じでした：
 
 ```text
 input list:
@@ -16,12 +15,11 @@ stack pop:
 [Some(ptr)] -> (A, Some(ptr)) -> (B, None)
 ```
 
-To make a queue, we just need to decide which operation to move to the
-end of the list: push, or pop? Since our list is singly-linked, we can
-actually move *either* operation to the end with the same amount of effort.
+キューを作るには，popとpushのどちらでリストの最後の要素を操作するか決めなくては
+いけません．片方向リストなのでどっちにしろ同程度の計算量になります．
 
-To move `push` to the end, we just walk all the way to the `None` and set it
-to Some with the new element.
+`push`を最後にするなら，リストを`None`が出るまでたどり新しい要素が入ったSomeに
+入れ替えます．
 
 ```text
 input list:
@@ -31,8 +29,7 @@ flipped push X:
 [Some(ptr)] -> (A, Some(ptr)) -> (B, Some(ptr)) -> (X, None)
 ```
 
-To move `pop` to the end, we just walk all the way to the node *before* the
-None, and `take` it:
+`pop`を最後にするなら，リストを`None`が出る*直前まで*たどり`take`します．
 
 ```text
 input list:
@@ -42,25 +39,23 @@ flipped pop:
 [Some(ptr)] -> (A, Some(ptr)) -> (B, None)
 ```
 
-We could do this today and call it quits, but that would stink! Both of these
-operations walk over the *entire* list. Some would argue that such a queue
-implementation is indeed a queue because it exposes the right interface. However
-I believe that performance guarantees are part of the interface. I don't care
-about precise asymptotic bounds, just "fast" vs "slow". Queues guarantee
-that push and pop are fast, and walking over the whole list is definitely *not*
-fast.
+これのどちらかをやって完成でもいいですが，これではお粗末です！どちらにせよリストの
+*全体*をたどる必要があります．正しいインターフェースを提供しているのでキューの実装としては
+これでいいという人もいるでしょう．ですが私はパフォーマンスを保証することもインターフェースの
+一部であると考えます．漸近的境界がどうのという話ではなく*速い*か*遅い*かです．キューは
+popとpushが速いことを保証するデータ構造であり，リスト全体をたどる操作は明らかに速くは
+ありません．
 
-One key observation is that we're wasting a ton of work doing *the same thing*
-over and over. Can we memoize this work? Why, yes! We can store a pointer to
-the end of the list, and just jump straight to there!
+ひとつの重要な視点は，同じことを何回も繰り返してリソースを無駄にしていることです．
+この操作を記憶できないでしょうか？なんと，できます！リストの末尾へのポインタを持ち，
+そこに直接行けばいいのです！
 
-It turns out that only one inversion of `push` and `pop` works with this.
-To invert `pop` we would have to move the "tail" pointer backwards, but
-because our list is singly-linked, we can't do that efficiently.
-If we instead invert `push` we only have to move the "head" pointer
-forwards, which is easy.
+リストの末尾を使う操作は`push`と`pop`のどちらかで大丈夫です．`pop`で使う場合
+末尾へのポインタを逆向きにたどる必要がありますが，片方向リストの性質上これを
+効率的に行うのは困難です．`push`で使うようにすれば，popするときはリストの先頭の
+ポインタを順方向にたどればいいので楽ですね．
 
-Let's try that:
+試してみましょう：
 
 ```rust ,ignore
 use std::mem;
@@ -106,13 +101,12 @@ impl<T> List<T> {
 }
 ```
 
-I'm going a bit faster with the impl details now since we should be pretty
-comfortable with this sort of thing. Not that you should necessarily expect
-to produce this code on the first try. I'm just skipping over some of the
-trial-and-error we've had to deal with before. I actually made a ton of mistakes
-writing this code that I'm not showing. You can only see me leave off a `mut` or
-`;` so many times before it stops being instructive. Don't worry, we'll see
-plenty of *other* error messages!
+この手の操作を書くのはかなり慣れてきていると思うので実装のペースをすこし上げていきます．
+とはいえ上のようなコードを一発で書き上げる必要はありません．今まであったような
+トライアンドエラーをとばして書いているだけです．実際私はこのコードを書くにあたって
+めちゃくちゃ間違えてます．私が出したエラーを全部見せていたら`mut`や`;`の書き忘れが
+あまりにも多く教本の体をなしていないでしょう．でも心配しないでください．これから
+*別の*エラーメッセージを沢山見ることになります！
 
 ```text
 > cargo build
@@ -130,17 +124,16 @@ error[E0382]: use of moved value: `new_tail`
    |                                      ^^^^^^^^ value used here after move
 ```
 
-Shoot!
+クソ！
 
 > use of moved value: `new_tail`
 
-Box doesn't implement Copy, so we can't just assign it to two locations. More
-importantly, Box *owns* the thing it points to, and will try to free it when
-it's dropped. If our `push` implementation compiled, we'd double-free the tail
-of our list! Actually, as written, our code would free the old_tail on every
-push. Yikes! 🙀
+BoxはCopyを実装していないので2箇所に入れることはできません．更に重要なことはBoxは
+中身の所有権を持つのでBoxがdropされたとき中身を解放しようとする点です．もしこの
+実装がコンパイルしてしまったら`push`するたびにリストの末尾を2回解放することになります．
+というか実際私達のコードはpushのたびにold_tailを解放しています！ギエー！🙀
 
-Alright, well we know how to make a non-owning pointer. That's just a reference!
+OK，でも私達は所有権を持たないポインタがなにか知っています．ふつうの参照です！
 
 ```rust ,ignore
 pub struct List<T> {
@@ -186,9 +179,8 @@ impl<T> List<T> {
 }
 ```
 
-Nothing too tricky here. Same basic idea as the previous code, except we're
-using some of that implicit return goodness to extract the tail reference from
-wherever we stuff the actual Box.
+特にトリッキーなことはしていません．基本的な発想はさっきと同じで，違いは暗黙のリターン
+を使ってnew_tailを作っていることくらいです．
 
 ```text
 > cargo build
@@ -200,9 +192,9 @@ error[E0106]: missing lifetime specifier
   |                  ^ expected lifetime parameter
 ```
 
-Oh right, we need to give references in types lifetimes. Hmm... what's the
-lifetime of this reference? Well, this seems like IterMut, right? Let's try
-what we did for IterMut, and just add a generic `'a`:
+ああそうでした．ライフタイムを与えなくてはいけません．うーん...ここのライフタイムは
+何でしょう？えっと，これってIterMutに似てますよね？IterMutと同じことをして，
+パラメータ名は`'a`を使いましょう：
 
 ```rust ,ignore
 pub struct List<'a, T> {
@@ -285,13 +277,14 @@ note: but, the lifetime must be valid for the lifetime 'a as defined on the impl
 
 ```
 
-Woah, that's a really detailed error message. That's a bit concerning, because it
-suggests we're doing something really messed up. Here's an interesting part:
+わー，これはずいぶん詳細なエラーメッセージですね．これはすこし憂慮すべきエラーです．
+というのもこれによると私達はかなりめちゃくちゃなことをやっているからです．興味深いのは
+部分です：
 
 > the lifetime must be valid for the lifetime `'a` as defined on the impl
 
-We're borrowing from `self`, but the compiler wants us to last as long as `'a`,
-what if we tell it `self` *does* last that long..?
+`self`を借用しているわけですが，コンパイラは少なくとも`'a`だけ生存して欲しがっています．
+では`self`が実際`'a`だけ生存すると示せばどうでしょう...？
 
 ```rust ,ignore
     pub fn push(&'a mut self, elem: T) {
@@ -309,9 +302,9 @@ warning: field is never used: `elem`
   = note: #[warn(dead_code)] on by default
 ```
 
-Oh, hey, that worked! Great!
+見てください，動きました！やった！
 
-Let's just do `pop` too:
+`pop`も同様に実装します：
 
 ```rust ,ignore
 pub fn pop(&'a mut self) -> Option<T> {
@@ -330,7 +323,7 @@ pub fn pop(&'a mut self) -> Option<T> {
 }
 ```
 
-And write a quick test for that:
+そしてちゃちゃっとテストを書いてしまいましょう：
 
 ```rust ,ignore
 mod test {
@@ -408,7 +401,7 @@ error[E0499]: cannot borrow `list` as mutable more than once at a time
 
 ....
 
-** WAY MORE LINES OF ERRORS **
+** まだまだあるエラー **
 
 ....
 
@@ -417,7 +410,14 @@ error: aborting due to 11 previous errors
 
 🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀🙀
 
-Oh my goodness.
+何ということでしょう．
+
+コンパイラは悪くありません．私達はたった今Rustの原罪[^1]を犯したのです．私達は
+自分への参照を*自分自身の中に*持ってしまいました．`push`と`pop`の実装では
+なんとかRustを言いくるめることができました（それができたのは衝撃的でしたが）．
+私はRustが`push`と`pop`を見た時点では参照がそれ自身の中にあるかどうか
+分からなかったんだと思いますが--というか，Rustにはそういう概念がありません．
+自分自身への参照が動作しないのは
 
 The compiler's not wrong for vomiting all over us. We just committed a
 cardinal Rust sin: we stored a reference to ourselves *inside ourselves*.
@@ -427,11 +427,10 @@ the reason is that Rust can't yet tell that the reference is into ourselves
 from just `push` and `pop` -- or rather, Rust doesn't really have that notion
 at all. Reference-into-yourself failing to work is just an emergent behaviour.
 
-As soon as we tried to *use* our list, everything quickly fell apart.
-When we call `push` or `pop`, we promptly store a reference to ourselves in
-ourselves and become *trapped*. We are literally borrowing ourselves.
+私達のリストは使おうとした途端全てが空中分解します．`push`や`pop`を呼んだ瞬間
+リストは自分への参照を持ち，*詰みます*．自分自身を借用しているのです．
 
-Our `pop` implementation hints at why this could be really dangerous:
+`pop`の実装を見るとなぜこれが危険であるかわかります：
 
 ```rust ,ignore
 // ...
@@ -471,9 +470,11 @@ struct Node<T> {
 And that's that. None of this wimpy reference-counted-dynamic-borrow-checking
 nonsense! Real. Hard. Unchecked. Pointers.
 
+みなさん，C言語でいきましょう．
 Let's be C everyone. Let's be C all day.
 
 I'm home. I'm ready.
 
-Hello `unsafe`.
+こんにちは，`unsafe`．
 
+[^1]: 訳注：Lust（色欲）とかかっている
