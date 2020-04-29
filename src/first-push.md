@@ -46,7 +46,7 @@ error[E0507]: cannot move out of borrowed content
 ```
 
 うえええええん．Rustは私達に正論を突きつけています．でもこれが具体的に何を
-意味するのか，あるいはどうすればいいかはよくわかりません：
+意味するのか，あるいはどうすればいいかは判然としません：
 
 > cannot move out of borrowed content
 

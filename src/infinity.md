@@ -4,7 +4,7 @@
 
 ワハハハハハハ
 
-No
+まだです
 
 リストはいくらでもあります．
 
@@ -15,5 +15,6 @@ No
 2. TODO: BList?
 3. TODO: SkipList?
 4. TODO: std::channel? -- That's like another whole chapter. Or 3.
+
 
 [^1]: 訳注：途絶えてます

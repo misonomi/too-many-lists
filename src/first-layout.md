@@ -2,16 +2,16 @@
 
 よし，で，連結リストってなんでしょう？えー，基本的にはヒープに割り当てられたデータの山で
 （カーネル勢はちょっと黙っててください），それぞれが順番に互いのポインタを持っています．
-連結リストは，手続き型言語のプログラマが10m以内に近づかないものであり関数型言語の
+連結リストは，手続き型言語のプログラマが10m以内に近づかないものであり，関数型言語の
 プログラマがあらゆる用途に使うものです．それなら，関数型言語のプログラマにどんなものか
-説明してもらうのがよさそうですね．彼らはこんな感じの定義を寄越すでしょう：
+説明してもらうのがよさそうですね．彼らはこんな感じの定義をよこすでしょう：
 
 ```haskell
 List a = Empty | Elem a (List a)
 ```
 
-これはだいたい「リストは空か，リストにリンクした要素である」みたいな感じに読めます．
-*直和型*を用いた再起的な定義ですね．直和型というのは「違う型の値を持つことができる型」
+これはだいたい「リストは空か，リストが後ろにつながった要素である」みたいな感じに読めます．
+*直和型*を用いた再起的な定義ですね．直和型というのは「異なる型の値を持つことができる型」
 のことです．Rustでは直和型は`enum`に相当します！もしCライクな言語に慣れているなら，
 Rustのenumはあなたが大好きなあのenumそのものです．じゃあ上の関数型の定義をRustっぽく
 書き換えてみましょう！
@@ -61,7 +61,7 @@ error[E0072]: recursive type `first::List` has infinite size
 
 > `pub struct Box<T>(_);`
 >
-> A pointer type for heap allocation.
+> A pointer type for heap allocation.  
 > See the [module-level documentation](https://doc.rust-lang.org/std/boxed/) for more.
 
 *リンクをクリックする*
@@ -76,20 +76,27 @@ error[E0072]: recursive type `first::List` has infinite size
 >
 > Creating a recursive data structure:
 >
-```
-#[derive(Debug)]
-enum List<T> {
-    Cons(T, Box<List<T>>),
-    Nil,
-}
-```
+> （訳）
+> `Box<T>`，通称BoxはRustにおける最も単純なヒープ割当を行います．Boxは割り当てられたメモリの所有権を持ち，内容物はBoxがスコープから外れたときにdropされます．
 >
-```
-fn main() {
-    let list: List<i32> = List::Cons(1, Box::new(List::Cons(2, Box::new(List::Nil))));
-    println!("{:?}", list);
-}
-```
+> 使用例
+>
+> Boxを作る：
+>
+> `let x = Box::new(5);`
+>
+> 再帰的なデータ構造を作る：
+>
+> ```
+> #[derive(Debug)]
+> enum List<T> {
+>     Cons(T, Box<List<T>>),
+>     Nil,
+> }
+> 
+> let list: List<i32> = List::Cons(1, Box::new(List::Cons(2, Box::new(List::Nil))));
+> println!("{:?}", list);
+> ```
 >
 > This will print `Cons(1, Box(Cons(2, Box(Nil))))`.
 >
@@ -98,6 +105,15 @@ fn main() {
 > `Cons(T, List<T>),`
 >
 > It wouldn't work. This is because the size of a List depends on how many elements are in the list, and so we don't know how much memory to allocate for a Cons. By introducing a Box, which has a defined size, we know how big Cons needs to be.
+>
+> （訳）
+> これは`Cons(1, Box(Cons(2, Box(Nil))))`をprintします．
+>
+> 再帰的なデータ構造はBoxを持たなくてはいけません．もしConsの定義がこのようであった場合：
+>
+> `Cons(T, List<T>),`
+>
+> これは動きません．なぜならListの大きさはその要素数によるため，Consのためにどのくらいメモリを割り当てればよいか分からないからです．定義された大きさを持つBoxを使うことで，どのくらいConsが大きければよいかあらかじめ知ることができます．
 
 わお，うん．多分今まで見た中で一番知りたいことが書いてあるドキュメントですね．
 ドキュメントのまさに最初に書いてあるのは*私達がやろうとしていたことそのものと，
@@ -164,12 +180,12 @@ Fooはどの*列挙子*（`D1`, `D2`, .. `Dn`）であるかを表す整数を�
 enumの*タグ*です．それに加え，`T1`, `T2`, .. `Tn`のうち*最大の*ものが入るメモリ空間が
 必要になります（あとメモリの整列のためのパディング）．
 
-ここで発生している大いなるムダは，`Empty`がたった1bitの情報でもポインタ1個と要素1個分の
-メモリが必要であることです．`Elem`にいつ変換されてもいいようにしなくてはならないのです．
-そんなわけで一つ目の設計ではゴミデータを割り当てざるを得ず，二つ目の構成より若干大きい
+ここで発生している大いなるムダは，`Empty`がたった1bitの情報であるにもかかわらずポインタ1個と
+要素1個分のメモリが必要であることです．`Elem`にいつ変換されてもいいようにしなくてはならないのです．
+そんなわけで1つ目の設計ではゴミデータを割り当てざるを得ず，2つ目の構成より若干大きい
 スペースが必要になります．
 
-ノードの一つがヒープにないのも，多分ビビるほど，常に全ノードがヒープに割り当てられるより
+ノードの一つがヒープにないのも，常に全ノードがヒープに割り当てられるより，多分ビビるほど
 *悪い*です．ノードの扱いが統一的でないと，pushやpopではそれほど困らないかもしれませんが
 分割や結合の際に厄介なことになります．
 
@@ -317,7 +333,7 @@ struct Node {
 ```
 
 `List`はフィールドがひとつしかない構造体なので，サイズはフィールドと同じになります．
-ゼロコスト抽象化です イエーイ！
+ゼロコスト抽象化です．イエーイ！
 
 ```text
 > cargo build
@@ -356,7 +372,7 @@ warning: field is never used: `next`
 
 ```
 
-よっしゃ，コンパイルが通りました！Rustは私達が作ったものが完全に無駄だといて
+よっしゃ，コンパイルが通りました！Rustは私達が作ったものが完全に無駄だといって
 めちゃくちゃ怒ってます．`head`をどこでも使ってないし，プライベートフィールドなので
 外部からも参照できないからです．したがって`Link`と`Node`も同様に無意味というわけです．
 というわけで次はこれを解決しましょう．このリストを使うコードを実装していきましょう！

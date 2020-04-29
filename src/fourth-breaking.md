@@ -1,6 +1,6 @@
 # 崩す
 
-`pop_front`は`push_front`と同じ処理を逆に行えばよさそうです。やってみましょう：
+`pop_front`は`push_front`と同じ処理を逆に行えばよさそうです．やってみましょう：
 
 ```rust ,ignore
 pub fn pop_front(&mut self) -> Option<T> {
@@ -34,7 +34,7 @@ error[E0609]: no field `elem` on type `std::rc::Rc<std::cell::RefCell<fourth::No
    |                      ^^^^ unknown field
 ```
 
-アーッ。*RefCell*か。`borrow_mut`しなきゃいけないみたいですね...
+アーッ．*RefCell*か．`borrow_mut`しなきゃいけないみたいですね...
 
 ```rust ,ignore
 pub fn pop_front(&mut self) -> Option<T> {
@@ -67,10 +67,10 @@ error[E0507]: cannot move out of borrowed content
 
 > cannot move out of borrowed content
 
-フム...私達はBoxに*めちゃくちゃ*甘えていたみたいですね。`borrow_mut`は
+フム...私達はBoxに*めちゃくちゃ*甘えていたみたいですね．`borrow_mut`は
 `&mut Node<T>`しか返さないのでムーブすることができません！
 
-`RefCell<T>`から`T`を返す何かが必要です。[ドキュメント][refcell]を見てみましょう：
+`RefCell<T>`から`T`を返す何かが必要です．[ドキュメント][refcell]を見てみましょう：
 
 > `fn into_inner(self) -> T`
 >
@@ -92,24 +92,24 @@ error[E0507]: cannot move out of an `Rc`
    |             ^^^^^^^^ cannot move out of an `Rc`
 ```
 
-あークソが。`into_inner`はRefCellをムーブしようとしますが`Rc`の中にあるので
-それはできません。前章でみた通り`Rc<T>`からは中身の共有参照しか取れません。
-でもそりゃそうですよね。参照カウンタがついた値は共有されるためのものなのですから！
+あークソが．`into_inner`はRefCellをムーブしようとしますが`Rc`の中にあるので
+それはできません．前章でみた通り`Rc<T>`からは中身の共有参照しか取れません．
+でもそりゃそうですよね．参照カウンタがついた値は共有されるためのものなのですから！
 
-この問題を解決するためには、前回と同様`Rc::try_unwrap`を使います。参照カウントが
-1ならRcから中身を取り出すメソッドです。
+この問題を解決するためには，前回と同様`Rc::try_unwrap`を使います．参照カウントが
+1ならRcから中身を取り出すメソッドです．
 
 ```rust ,ignore
 Rc::try_unwrap(old_head).unwrap().into_inner().elem
 ```
 
-`Rc::try_unwrap`は`Result<T, Rc<T>>`を返します。Resultは`Option`を汎化したような
-もので、`None`にデータを入れられるようになったものです。この場合`None`
-の代わりに返されるものは剥こうとした`Rc`です。今回は失敗の場合を考えないので
-（プログラムを正しく書けていれば成功する*はず*です）単に`unwrap`します。
+`Rc::try_unwrap`は`Result<T, Rc<T>>`を返します．Resultは`Option`を汎化したような
+もので，`None`にデータを入れられるようになったものです．この場合`None`
+の代わりに返されるものは剥こうとした`Rc`です．今回は失敗の場合を考えないので
+（プログラムを正しく書けていれば成功する*はず*です）単に`unwrap`します．
 
-とにかく、次はどんなコンパイルエラーが出るか見てみましょう（準備はよろしいですか？
-1個はあるはずです）。
+とにかく，次はどんなコンパイルエラーが出るか見てみましょう（準備はよろしいですか？
+1個はあるはずです）．
 
 ```text
 > cargo build
@@ -124,11 +124,11 @@ error[E0599]: no method named `unwrap` found for type `std::result::Result<std::
            `std::rc::Rc<std::cell::RefCell<fourth::Node<T>>> : std::fmt::Debug`
 ```
 
-ぐえー。Resultを`unwrap`するにはエラーとして渡される型をデバッグ出力できる必要が
-あります。`RefCell<T>`は`T`が`Debug`を実装する場合のみデバッグ出力できますが、
-`Node`は`Debug`を実装していませんでした。
+ぐえー．Resultを`unwrap`するにはエラーとして渡される型をデバッグ出力できる必要が
+あります．`RefCell<T>`は`T`が`Debug`を実装する場合のみデバッグ出力できますが，
+`Node`は`Debug`を実装していませんでした．
 
-Debugを実装するより、`ok`でResultをOptionに変換してしまう方がいいでしょう：
+Debugを実装するより，`ok`でResultをOptionに変換してしまう方がいいでしょう：
 
 ```rust ,ignore
 Rc::try_unwrap(old_head).ok().unwrap().into_inner().elem
@@ -145,11 +145,11 @@ cargo build
 
 *フゥ*
 
-やりました。
+やりました．
 
-`push`と`pop`ができました。
+`push`と`pop`ができました．
 
-はじめに作ったリストと実装した機能が同じなので、そっちからテストコードを
+はじめに作ったリストと実装した機能が同じなので，そっちからテストコードを
 盗んできてテストしましょう：
 
 ```rust ,ignore
@@ -210,8 +210,8 @@ test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured
 
 *はいバッチリ*
 
-これでリストから要素を取り除けるのでDropの実装に移れます。今回のDropはすこし
-おもしろいことになっています。というのも、これまでDropを実装するに際し再帰が
+これでリストから要素を取り除けるのでDropの実装に移れます．今回のDropはすこし
+おもしろいことになっています．というのも，これまでDropを実装するに際し再帰が
 起こらないようにがんばる必要がありましたが，今回はとにかく*何か*が起こるように
 がんばる必要があります．
 

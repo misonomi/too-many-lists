@@ -40,7 +40,7 @@ error[E0107]: wrong number of type arguments: expected 1, found 0
 ```
 
 ここでの問題は明らかです．私達はこの`List`とかいうのを扱っていますが，そんなものは
-もう存在しませｎ．OptionやBoxのように，常に`List<何か>`を扱わなくてはいけないのです．
+もう存在しません．OptionやBoxのように，常に`List<何か>`を扱わなくてはいけないのです．
 
 しかしこのimplに渡す何かとは何でしょうか？List同様，*全て*のコードがTに対して
 動いてほしいですよね．ではListと同じく`impl`もとげとげにしましょう：

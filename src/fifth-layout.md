@@ -417,15 +417,7 @@ error: aborting due to 11 previous errors
 なんとかRustを言いくるめることができました（それができたのは衝撃的でしたが）．
 私はRustが`push`と`pop`を見た時点では参照がそれ自身の中にあるかどうか
 分からなかったんだと思いますが--というか，Rustにはそういう概念がありません．
-自分自身への参照が動作しないのは
-
-The compiler's not wrong for vomiting all over us. We just committed a
-cardinal Rust sin: we stored a reference to ourselves *inside ourselves*.
-Somehow, we managed to convince Rust that this totally made sense in our
-`push` and `pop` implementations (I was legitimately shocked we did). I believe
-the reason is that Rust can't yet tell that the reference is into ourselves
-from just `push` and `pop` -- or rather, Rust doesn't really have that notion
-at all. Reference-into-yourself failing to work is just an emergent behaviour.
+自分自身への参照が動作しないのは単なる現象に過ぎず，根本的な問題ではありません．
 
 私達のリストは使おうとした途端全てが空中分解します．`push`や`pop`を呼んだ瞬間
 リストは自分への参照を持ち，*詰みます*．自分自身を借用しているのです．

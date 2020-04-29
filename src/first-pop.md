@@ -269,4 +269,4 @@ cargo build
 
 
 [ownership]: first-ownership.html
-[diverging]: https://doc.rust-lang.org/nightly/book/ch19-04-advanced-types.html#the-never-type-that-never-returns
+[diverging]: https://doc.rust-jp.rs/book/second-edition/ch19-04-advanced-types.html#never%E5%9E%8B%E3%81%AF%E7%B5%B6%E5%AF%BE%E3%81%AB%E8%BF%94%E3%82%89%E3%81%AA%E3%81%84
