@@ -1,8 +1,9 @@
-# Basics
+# 基本
 
-Alright, back to basics. How do we construct our list?
+はい，では基本に立ち返りましょう．どうやってリストを初期化したら
+よいでしょうか？
 
-Before we just did:
+前回はこうしました：
 
 ```rust ,ignore
 impl<T> List<T> {
@@ -12,7 +13,7 @@ impl<T> List<T> {
 }
 ```
 
-But we're not using Option for the `tail` anymore:
+しかしもはや`tail`にOptionを使っていません：
 
 ```text
 > cargo build
@@ -27,13 +28,13 @@ error[E0308]: mismatched types
               found type `std::option::Option<_>`
 ```
 
-We *could* use an Option, but unlike Box, `*mut` *is* nullable. This means it
-can't benefit from the null pointer optimization. Instead, we'll be using `null`
-to represent None.
+Optionを使うこともできるにはできますが，Boxと違って`*mut`はnullになり得ます．つまり
+ヌルポインタ最適化の恩恵を受けられないのです．なので，Optionを使う代わりに`null`で
+Noneを表すことにしましょう．
 
-So how do we get a null pointer? There's a few ways, but I prefer to use
-`std::ptr::null_mut()`. If you want, you can also use `0 as *mut _`, but that
-just seems so *messy*.
+ではヌルポインタを代入するにはどうすればいいでしょうか？いくつかやり方はありますが，
+私は`std::ptr::null_mut()`を使うのが好きです．`0 as *mut _`を使う手もありますが
+ちょっと汚く見えます．
 
 ```rust ,ignore
 use std::ptr;
@@ -77,24 +78,23 @@ warning: field is never used: `head`
    |     ^^^^^^^^^^^^^
 ```
 
-*shush* compiler, we will use them soon.
+黙ってろコンパイラ，今から使うから．
 
-Alright, let's move on to writing `push` again. This time, instead of grabbing
-an `Option<&mut Node<T>>` after we insert, we're just going to grab a
-`*mut Node<T>` to the insides of the Box right away. We know we can soundly do
-this because the contents of a Box has a stable address, even if we move the
-Box around. Of course, this isn't *safe*, because if we just drop the Box we'll
-have a pointer to freed memory.
+はい，ではもう一度`push`を実装していきましょう．今回は挿入したあとに`Option<&mut Node<T>>`
+を取るのではなく，Boxの中にある`*mut Node<T>`をそのまま取ります．これがうまくいくのは
+Boxを移動しても中身のメモリアドレスは変わらないからですね．もちろんこれは不安全な操作です．
+もしBoxをdropしてしまったら私達は解放されたメモリを指すポインタを持つことになります．
 
-How do we make a raw pointer from a normal pointer? Coercions! If a variable
-is declared to be a raw pointer, a normal reference will coerce into it:
+どうすれば普通のポインタから生ポインタを作れるのでしょうか？Coercionです！
+もし変数が生ポインタとして宣言されていれば，普通の参照は生ポインタになることを強制
+（Coerce）されます：
 
 ```rust ,ignore
 let raw_tail: *mut _ = &mut *new_tail;
 ```
 
-We have all the info we need. We can translate our code into, approximately,
-the previous reference version:
+これで必要なものは揃いました．前回の参照を使ったバージョンとだいたい同じ感じに
+書けます：
 
 ```rust ,ignore
 pub fn push(&mut self, elem: T) {
@@ -130,11 +130,11 @@ error[E0609]: no field `next` on type `*mut fifth::Node<T>`
    |             help: `self.tail` is a raw pointer; try dereferencing it: `(*self.tail).next`
 ```
 
-Huh? We have a pointer to a Node, why can't we get the `next` field?
+は？Nodeのポインタを持ってるのに`next`をとれないの？
 
-Rust is kinda a jerk when you use raw pointers. To access the contents of a
-raw pointer, it insists that we manually deref them, because it's such an unsafe
-operation. So let's do that:
+Rustは生ポインタを使い出すとちょっと嫌なヤツになります．生ポインタの中身にアクセス
+するとき，不安全な操作だと言って手動で参照外しをすることを強制してくるのです．では
+そのようにやってみましょう：
 
 ```rust ,ignore
 *self.tail.next = Some(new_tail);
@@ -152,7 +152,7 @@ error[E0609]: no field `next` on type `*mut fifth::Node<T>`
    |             help: `self.tail` is a raw pointer; try dereferencing it: `(*self.tail).next`
 ```
 
-Uuuugh operator precedence.
+うううううオペレータの優先順を考えなくてはいけませんでした．
 
 ```rust ,ignore
 (*self.tail).next = Some(new_tail);
@@ -170,15 +170,14 @@ error[E0133]: dereference of raw pointer is unsafe and requires unsafe function 
    = note: raw pointers may be NULL, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior
 ```
 
-THIS SHOULDN'T BE THIS HARD.
+こんな難しいわけないだろ．
 
-Remember how I said Unsafe Rust is like an FFI language for Safe Rust? Well, the
-compiler wants us to explicitly delimit where we're doing this FFI-ing. We have
-two options. First, we can mark our *entire* function as unsafe, in which case
-it becomes an Unsafe Rust function and can only be called in an `unsafe`
-context. This isn't great, because we want our list to be safe to use. Second,
-we can write an `unsafe` block inside our function, to delimit the FFI boundary.
-This declares the overall function to be safe. Let's do that one:
+不安全なRustは安全なRustにとってFFIみたいなものだと言ったことを覚えていますか？えっと，
+私達はコンパイラにどこでFFIしているか明示する必要があります．方法は二つです．一つ目は
+関数全体を不安全にすることで，そうすると関数は不安全なRustに属し，`unsafe`なところ
+からしか呼べなくなります．これはあまり良くありません．私達はリストを使う分には安全に
+したいのですから．二つ目は関数内に`unsafe`ブロックを書き，FFIの境界を切ることです．
+この場合関数自体は安全なままです．後者でいってみましょう：
 
 
 ```rust ,ignore
@@ -216,45 +215,39 @@ warning: field is never used: `elem`
    = note: #[warn(dead_code)] on by default
 ```
 
-Yay!
+イエーイ！
 
-It's kind've interesting that that's the *only* place we've had to write an
-unsafe block so far. We do raw pointer stuff all over the place, what's up with
-that?
+他のいろんなところでも生ポインタを扱っているのにここ*しか*unsafeにしなくていいのは
+ちょっとおもしろいですね．何が起こっているのでしょうか？
 
-It turns out that Rust is a massive rules-lawyer pedant when it comes to
-`unsafe`. We quite reasonably want to maximize the set of Safe Rust programs,
-because those are programs we can be much more confident in. To accomplish this,
-Rust carefully carves out a minimal surface area for unsafety. Note that all
-the other places we've worked with raw pointers has been *assigning* them, or
-just observing whether they're null or not.
+`unsafe`のことになるとRustはかなり仕切りたがり屋であるようです．私達は安全なRustのほうが
+自信があるので当然できるだけそっちを使いたいわけですが，Rustはそれを達成するために
+不安全な部分が最小になるような境界を注意深く引いてくれるのです．私達が生ポインタを
+使っている他の部分はポインタに*代入している*か，nullかどうかチェックしているだけである
+ことに注目してください．
 
-If you never actually dereference a raw pointer *those are totally safe things
-to do*. You're just reading and writing an integer! The only time you can
-actually get into trouble with a raw pointer is if you actually dereference it.
-So Rust says *only* that operation is unsafe, and everything else is totally
-safe.
+もし参照を外さないのであれば，*生ポインタは完全に安全です*．ただ整数を読んだり書いたり
+しているだけです！生ポインタで問題が起きるのは参照を外すときだけなので，Rustはその
+操作*だけ*を不安全だと言い，ほかは安全な操作として扱うのです．
 
-Super. Pedantic. But technically correct.
+超．衒学的．でも技術的には正しいですね．
 
-However this raises an interesting problem: although we're supposed to delimit
-the scope of the unsafety with the `unsafe` block, it actually depends on
-state that was established outside of the block. Outside of the function, even!
+しかしこれは興味深い問題を生みます．もし`unsafe`ブロックを区切っても，その中の
+状態はunsafeブロックの外部に依存します．もしかしたら関数の外にすら依存するかも
+しれません！
 
-This is what I call unsafe *taint*. As soon as you use `unsafe` in a module,
-that whole module is tainted with unsafety. Everything has to be correctly
-written in order to make sure that invariants are upheld for the unsafe code.
+わたしはこれをunsafe*汚染*と呼んでいます．`unsafe`を使うや否やモジュール全体が
+不安全に汚染されてしまうのです．コードの不変性が不安全さを支えて持ちこたえられる
+ためには，全てが正しく実装されている必要があります．
 
-This taint is manageable because of *privacy*. Outside of our module, all of our
-struct fields are totally private, so no one else can mess with our state in
-arbitrary ways. As long as no combination of the APIs we expose causes bad stuff
-to happen, as far as an outside observer is concerned, all of our code is safe!
-And really, this is no different from the FFI case. No one needs to care
-if some python math library shells out to C as long as it exposes a safe
-interface.
+この汚染は*プライバシー*によって食い止められます．私達のモジュール外からはstructの
+フィールドは操作できないので私達以外の誰もそれらの内部状態を好き勝手することはできません．
+私達のAPIをどんなふうに組み合わせも安全であり，かつ外部から操作できる範囲がちゃんと
+正しく決められている限り，私達のコードは安全です！そして本当にこれはFFIと何も
+変わりません．PythonのライブラリがCを呼び出していようと，安全なインターフェースを
+提供している限り誰も気にしません．
 
-Anyway, let's move on to `pop`, which is pretty much verbatim the reference
-version:
+ともかく`pop`にいきましょう．参照をつかうバージョンとほぼ一緒です：
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<T> {
@@ -271,11 +264,11 @@ pub fn pop(&mut self) -> Option<T> {
 }
 ```
 
-Again we see another case where safety is stateful. If we fail to null out the
-tail pointer in *this* function, we'll see no problems at all. However
-subsequent calls to `push` will start writing to the dangling tail!
+またしても安全とはステートフルであることを示すケースに遭遇しました．もしこの関数で
+tailのポインタをnullにするのを忘れても，すぐにはなんの問題も現れません．しかし
+そのあと`push`するとダングリングポインタになっているtailに書き込んでしまいます！
 
-Let's test it out:
+テストしていきましょう：
 
 ```rust ,ignore
 #[cfg(test)]
@@ -321,9 +314,8 @@ mod test {
 }
 ```
 
-This is just the stack test, but with the expected `pop` results flipped around.
-I also added some extra steps at the end to make sure that tail-pointer
-corruption case in `pop` doesn't occur.
+これはスタックのテストそのままですが，`pop`が逆順に出てくることを期待している点が違います．
+また，最後に`pop`が空振りしたときもポインタが壊れていないか確認するケースを追加しています．
 
 ```text
 cargo test
@@ -347,6 +339,4 @@ test third::test::iter ... ok
 test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured
 ```
 
-Gold Star!
-
-
+大金星！

@@ -439,19 +439,19 @@ if self.head.is_none() {
 }
 ```
 
-What if we forgot to do this? Then our tail would point to some node *that
-had been removed from the list*. Such a node would be instantly freed, and we'd
-have a dangling pointer which Rust was supposed to protect us from!
+もし私達がこれを忘れたらどうなっていたでしょう？リストのtailは*リストから除外された
+ノード*を指すことになります．リストから除外されたノードのメモリは解放され，Rust
+が防いでくれるはずのダングリングポインタが生まれてしまいます！
 
-And indeed Rust is protecting us from that kind of danger. Just in a very...
-**roundabout** way.
+Rustはたしかにそういう危険から私達を守ってくれているのです．ただかなり...
+**回りくどい**やりかたですが．
 
-So what can we do? Go back to `Rc<RefCell>>` hell?
+ではどうしたらいいでしょうか？また`Rc<RefCell>>`地獄に戻る？
 
-Please. No.
+だめです．勘弁してください．
 
-No instead we're going to go off the rails and use *raw pointers*.
-Our layout is going to look like this:
+かわりに敷かれたレールを外れて*生のポインタ*を使います．私達のリストはこんな感じに
+なるでしょう：
 
 ```rust ,ignore
 pub struct List<T> {
@@ -467,14 +467,13 @@ struct Node<T> {
 }
 ```
 
-And that's that. None of this wimpy reference-counted-dynamic-borrow-checking
-nonsense! Real. Hard. Unchecked. Pointers.
+そしてこれが全てです．もうクソ雑魚参照カウント付動的借用チェックには頼りません！
+本物の，過酷な，未検査の，ポインタを使います．
 
-みなさん，C言語でいきましょう．
-Let's be C everyone. Let's be C all day.
+みなさん，C言語でいきましょう．いつも，いつでもCで．
 
-I'm home. I'm ready.
+私はここに帰ってきました．もう準備はできてます．
 
-こんにちは，`unsafe`．
+Hello, `unsafe`.
 
 [^1]: 訳注：Lust（色欲）とかかっている

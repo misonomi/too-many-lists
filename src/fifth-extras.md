@@ -1,11 +1,10 @@
-# Extra Junk
+# その他のゴミ
 
-Now that `push` and `pop` are written, everything else is exactly the same
-as the stack case. Only operations that change the length of the list need
-to actually worry about the tail pointer.
+`push`と`pop`が書けたので後はスタックのときと完全に同じです．リストの長さを変える
+操作だけが末尾ポインタのことを気にかければよいのです．
 
-So let's just steal all that from our second list (be sure to reverse the
-expected test output):
+というわけで二番目のリストから全てをパクってきましょう（テストでpopが逆順に出てくる
+ことを期待するよう変えることを忘れないでください）：
 
 ```rust ,ignore
 // ...
@@ -162,7 +161,6 @@ test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured
 ```
 
 
-Shout-outs to copy-paste programming.
+コピペプログラミングに感謝を．
 
-At first I thought we'd have to mess around with IntoIter, but we still
-conveniently pop in iteration order!
+一瞬IntoIterが動かないんじゃないかと思いましたがいい感じに逆順にpopできていましたね！

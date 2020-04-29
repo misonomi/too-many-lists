@@ -40,4 +40,4 @@
     * [最終コード](fifth-final.md)
 * [まあまあなメモリ不安全両端キュー](sixth.md)
 * [アホなリストたち](infinity.md)
-    * [The Double Single](infinity-double-single.md)
+    * [二重片方向リスト](infinity-double-single.md)

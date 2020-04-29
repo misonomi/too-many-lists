@@ -1,10 +1,10 @@
-# Final Code
+# 最終コード
 
-Alright, so with a teeny-tiny dash of unsafety we managed to get a linear
-time improvement over the naive safe queue, and we managed to reuse almost
-all of the logic from the safe stack!
+さて，不安全にほんのちょびっと触っただけで安全なキューから線形時間の性能向上が
+得られました．しかもほとんどすべてのロジックを安全なスタックから再利用することが
+できています！
 
-We also notably *didn't* have to write any crazy Rc or RefCell stuff.
+そしてRcとかRefCellとかの狂ったものを書かずに済んでいます．
 
 ```rust
 use std::ptr;
