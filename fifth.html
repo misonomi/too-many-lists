@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>メモリ不安全キュー - Learning Rust With Entirely Too Many Linked Lists</title>
+        <title>メモリ不安全キュー - あまりにも超大量の連結リストで学ぶRust</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
@@ -78,7 +78,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li><a href="index.html"><strong aria-hidden="true">1.</strong> はじめに</a></li><li><a href="first.html"><strong aria-hidden="true">2.</strong> クソスタック</a></li><li><ol class="section"><li><a href="first-layout.html"><strong aria-hidden="true">2.1.</strong> 設計</a></li><li><a href="first-new.html"><strong aria-hidden="true">2.2.</strong> New</a></li><li><a href="first-ownership.html"><strong aria-hidden="true">2.3.</strong> 所有権</a></li><li><a href="first-push.html"><strong aria-hidden="true">2.4.</strong> Push</a></li><li><a href="first-pop.html"><strong aria-hidden="true">2.5.</strong> Pop</a></li><li><a href="first-test.html"><strong aria-hidden="true">2.6.</strong> テスト</a></li><li><a href="first-drop.html"><strong aria-hidden="true">2.7.</strong> Drop</a></li><li><a href="first-final.html"><strong aria-hidden="true">2.8.</strong> 最終コード</a></li></ol></li><li><a href="second.html"><strong aria-hidden="true">3.</strong> ましなスタック</a></li><li><ol class="section"><li><a href="second-option.html"><strong aria-hidden="true">3.1.</strong> Option</a></li><li><a href="second-generic.html"><strong aria-hidden="true">3.2.</strong> ジェネリクス</a></li><li><a href="second-peek.html"><strong aria-hidden="true">3.3.</strong> Peek</a></li><li><a href="second-into-iter.html"><strong aria-hidden="true">3.4.</strong> IntoIter</a></li><li><a href="second-iter.html"><strong aria-hidden="true">3.5.</strong> Iter</a></li><li><a href="second-iter-mut.html"><strong aria-hidden="true">3.6.</strong> IterMut</a></li><li><a href="second-final.html"><strong aria-hidden="true">3.7.</strong> 最終コード</a></li></ol></li><li><a href="third.html"><strong aria-hidden="true">4.</strong> 永続スタック</a></li><li><ol class="section"><li><a href="third-layout.html"><strong aria-hidden="true">4.1.</strong> 設計</a></li><li><a href="third-basics.html"><strong aria-hidden="true">4.2.</strong> 基本</a></li><li><a href="third-drop.html"><strong aria-hidden="true">4.3.</strong> Drop</a></li><li><a href="third-arc.html"><strong aria-hidden="true">4.4.</strong> Arc</a></li><li><a href="third-final.html"><strong aria-hidden="true">4.5.</strong> 最終コード</a></li></ol></li><li><a href="fourth.html"><strong aria-hidden="true">5.</strong> メモリ安全クソ両端キュー</a></li><li><ol class="section"><li><a href="fourth-layout.html"><strong aria-hidden="true">5.1.</strong> 設計</a></li><li><a href="fourth-building.html"><strong aria-hidden="true">5.2.</strong> 作る</a></li><li><a href="fourth-breaking.html"><strong aria-hidden="true">5.3.</strong> 壊す</a></li><li><a href="fourth-peek.html"><strong aria-hidden="true">5.4.</strong> Peek</a></li><li><a href="fourth-symmetry.html"><strong aria-hidden="true">5.5.</strong> 対象的な操作の実装</a></li><li><a href="fourth-iteration.html"><strong aria-hidden="true">5.6.</strong> Iteration</a></li><li><a href="fourth-final.html"><strong aria-hidden="true">5.7.</strong> 最終コード</a></li></ol></li><li><a href="fifth.html" class="active"><strong aria-hidden="true">6.</strong> メモリ不安全キュー</a></li><li><ol class="section"><li><a href="fifth-layout.html"><strong aria-hidden="true">6.1.</strong> 設計</a></li><li><a href="fifth-unsafe.html"><strong aria-hidden="true">6.2.</strong> Unsafe</a></li><li><a href="fifth-basics.html"><strong aria-hidden="true">6.3.</strong> 基本</a></li><li><a href="fifth-extras.html"><strong aria-hidden="true">6.4.</strong> 応用</a></li><li><a href="fifth-final.html"><strong aria-hidden="true">6.5.</strong> 最終コード</a></li></ol></li><li><a href="sixth.html"><strong aria-hidden="true">7.</strong> ましなメモリ不安全両端キュー</a></li><li><a href="infinity.html"><strong aria-hidden="true">8.</strong> アホなリストたち</a></li><li><ol class="section"><li><a href="infinity-double-single.html"><strong aria-hidden="true">8.1.</strong> The Double Single</a></li></ol></li></ol>
+                <ol class="chapter"><li><a href="index.html"><strong aria-hidden="true">1.</strong> はじめに</a></li><li><a href="first.html"><strong aria-hidden="true">2.</strong> クソスタック</a></li><li><ol class="section"><li><a href="first-layout.html"><strong aria-hidden="true">2.1.</strong> 設計</a></li><li><a href="first-new.html"><strong aria-hidden="true">2.2.</strong> New</a></li><li><a href="first-ownership.html"><strong aria-hidden="true">2.3.</strong> 所有権</a></li><li><a href="first-push.html"><strong aria-hidden="true">2.4.</strong> Push</a></li><li><a href="first-pop.html"><strong aria-hidden="true">2.5.</strong> Pop</a></li><li><a href="first-test.html"><strong aria-hidden="true">2.6.</strong> テスト</a></li><li><a href="first-drop.html"><strong aria-hidden="true">2.7.</strong> Drop</a></li><li><a href="first-final.html"><strong aria-hidden="true">2.8.</strong> 最終コード</a></li></ol></li><li><a href="second.html"><strong aria-hidden="true">3.</strong> まあまあなスタック</a></li><li><ol class="section"><li><a href="second-option.html"><strong aria-hidden="true">3.1.</strong> Option</a></li><li><a href="second-generic.html"><strong aria-hidden="true">3.2.</strong> ジェネリクス</a></li><li><a href="second-peek.html"><strong aria-hidden="true">3.3.</strong> Peek</a></li><li><a href="second-into-iter.html"><strong aria-hidden="true">3.4.</strong> IntoIter</a></li><li><a href="second-iter.html"><strong aria-hidden="true">3.5.</strong> Iter</a></li><li><a href="second-iter-mut.html"><strong aria-hidden="true">3.6.</strong> IterMut</a></li><li><a href="second-final.html"><strong aria-hidden="true">3.7.</strong> 最終コード</a></li></ol></li><li><a href="third.html"><strong aria-hidden="true">4.</strong> 永続スタック</a></li><li><ol class="section"><li><a href="third-layout.html"><strong aria-hidden="true">4.1.</strong> 設計</a></li><li><a href="third-basics.html"><strong aria-hidden="true">4.2.</strong> 基本</a></li><li><a href="third-drop.html"><strong aria-hidden="true">4.3.</strong> Drop</a></li><li><a href="third-arc.html"><strong aria-hidden="true">4.4.</strong> Arc</a></li><li><a href="third-final.html"><strong aria-hidden="true">4.5.</strong> 最終コード</a></li></ol></li><li><a href="fourth.html"><strong aria-hidden="true">5.</strong> メモリ安全クソ両端キュー</a></li><li><ol class="section"><li><a href="fourth-layout.html"><strong aria-hidden="true">5.1.</strong> 設計</a></li><li><a href="fourth-building.html"><strong aria-hidden="true">5.2.</strong> 作る</a></li><li><a href="fourth-breaking.html"><strong aria-hidden="true">5.3.</strong> 崩す</a></li><li><a href="fourth-peek.html"><strong aria-hidden="true">5.4.</strong> Peek</a></li><li><a href="fourth-symmetry.html"><strong aria-hidden="true">5.5.</strong> 対称的な操作の実装</a></li><li><a href="fourth-iteration.html"><strong aria-hidden="true">5.6.</strong> イテレート</a></li><li><a href="fourth-final.html"><strong aria-hidden="true">5.7.</strong> 最終コード</a></li></ol></li><li><a href="fifth.html" class="active"><strong aria-hidden="true">6.</strong> メモリ不安全キュー</a></li><li><ol class="section"><li><a href="fifth-layout.html"><strong aria-hidden="true">6.1.</strong> 設計</a></li><li><a href="fifth-unsafe.html"><strong aria-hidden="true">6.2.</strong> Unsafe</a></li><li><a href="fifth-basics.html"><strong aria-hidden="true">6.3.</strong> 基本</a></li><li><a href="fifth-extras.html"><strong aria-hidden="true">6.4.</strong> 応用</a></li><li><a href="fifth-final.html"><strong aria-hidden="true">6.5.</strong> 最終コード</a></li></ol></li><li><a href="sixth.html"><strong aria-hidden="true">7.</strong> まあまあなメモリ不安全両端キュー</a></li><li><a href="infinity.html"><strong aria-hidden="true">8.</strong> アホなリストたち</a></li><li><ol class="section"><li><a href="infinity-double-single.html"><strong aria-hidden="true">8.1.</strong> 二重片方向リスト</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -110,7 +110,7 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Learning Rust With Entirely Too Many Linked Lists</h1>
+                        <h1 class="menu-title">あまりにも超大量の連結リストで学ぶRust</h1>
 
                         <div class="right-buttons">
                             <a href="print.html" title="Print this book" aria-label="Print this book">
@@ -145,16 +145,15 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#an-unsafe-singly-linked-queue" id="an-unsafe-singly-linked-queue">An Unsafe Singly-Linked Queue</a></h1>
-<p>Ok that reference-counted interior mutability stuff got a little out of
-control. Surely Rust doesn't really expect you to do that sort of thing
-in general? Well, yes and no. Rc and Refcell can be great for handling
-simple cases, but they can get unwieldy. Especially if you
-want to hide that it's happening. There's gotta be a better way!</p>
-<p>In this chapter we're going to roll back to singly-linked lists and
-implement a singly-linked queue to dip our toes into <em>raw pointers</em>
-and <em>Unsafe Rust</em>.</p>
-<p>Let's add a new file called <code>fifth.rs</code>:</p>
+                        <h1><a class="header" href="#不安全な片方向キュー" id="不安全な片方向キュー">不安全な片方向キュー</a></h1>
+<p>えー，前回の参照カウントと内部可変性をつかったリストは少し私達の手に余りました．
+もちろんRustではああいったことを一般的に想定しているわけではないですよね？
+答えはYESでありNOです．RcとRefCellは簡単なものを扱う場合は素晴らしい型ですが
+たまに扱いにくいことがあります．何が起こってるか隠蔽したい場合には特に．
+もっといい方法があるはずです！</p>
+<p>この章では片方向リストを再び扱い，その実装を通してちょっとだけ<em>生のポインタ</em>
+と<em>不安全なRust</em>に触れます．</p>
+<p><code>fifth.rs</code>という新しいファイルを作りましょう：</p>
 <pre><code class="language-rust ignore">// in lib.rs
 
 pub mod first;
@@ -163,10 +162,9 @@ pub mod third;
 pub mod fourth;
 pub mod fifth;
 </code></pre>
-<p>Our code is largely going to be derived from second.rs, since a queue is
-mostly an augmentation of a stack in the world of linked lists. Still, we're
-going to go from scratch because there's some fundamental issues we want to
-address with layout and what-not.</p>
+<p>連結リストの形を取る場合キューはほとんどスタックを拡張したものなので，ほとんどの
+コードをsecond.rsを元にして書くことができます．でも，設計などの基本的な問題があるので
+何もない状態から始めたいと思います．</p>
 
                     </main>
 
