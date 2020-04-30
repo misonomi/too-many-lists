@@ -146,7 +146,7 @@ mod test {
         let list = list.tail();
         assert_eq!(list.head(), None);
 
-        // Make sure empty tail works
+        // tailが空のとき動くことを確認
         let list = list.tail();
         assert_eq!(list.head(), None);
 

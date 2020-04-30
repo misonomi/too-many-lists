@@ -48,21 +48,21 @@ impl<T> List<T> {
 
 ```rust ,ignore
 pub fn push_front(&mut self, elem: T) {
-    // new node needs +2 links, everything else should be +0
+    // 新しいノードはリンクの個数が+2され，他は+0であればよい
     let new_head = Node::new(elem);
     match self.head.take() {
         Some(old_head) => {
-            // non-empty list, need to connect the old_head
+            // 空でないリストなのでold_headをつなげる
             old_head.prev = Some(new_head.clone()); // +1 new_head
             new_head.next = Some(old_head);         // +1 old_head
             self.head = Some(new_head);             // +1 new_head, -1 old_head
-            // total: +2 new_head, +0 old_head -- OK!
+            // 計：+2 new_head, +0 old_head -- OK!
         }
         None => {
-            // empty list, need to set the tail
+            // 空リストなのでtailにセットする
             self.tail = Some(new_head.clone());     // +1 new_head
             self.head = Some(new_head);             // +1 new_head
-            // total: +2 new_head -- OK!
+            // 計：+2 new_head -- OK!
         }
     }
 }

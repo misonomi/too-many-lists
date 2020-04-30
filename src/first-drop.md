@@ -43,18 +43,18 @@ list -> A -> B -> C
 ```rust ,ignore
 impl Drop for List {
     fn drop(&mut self) {
-        // NOTE: you can't actually explicitly call `drop` in real Rust code;
-        // we're pretending to be the compiler!
-        self.head.drop(); // tail recursive - good!
+        // NOTE: 本当は`drop`を明示的に呼ぶことはできません
+        // 今はコンパイラのふりをしています！
+        self.head.drop(); // 末尾再帰 - good!
     }
 }
 
 impl Drop for Link {
     fn drop(&mut self) {
         match *self {
-            Link::Empty => {} // Done!
+            Link::Empty => {} // おわり！
             Link::More(ref mut boxed_node) => {
-                boxed_node.drop(); // tail recursive - good!
+                boxed_node.drop(); // 末尾再帰 - good!
             }
         }
     }
@@ -62,7 +62,7 @@ impl Drop for Link {
 
 impl Drop for Box<Node> {
     fn drop(&mut self) {
-        self.ptr.drop(); // uh oh, not tail recursive!
+        self.ptr.drop(); // あーっ，末尾再帰じゃない！
         deallocate(self.ptr);
     }
 }
@@ -83,12 +83,12 @@ Boxを`deallocate`した*後に*中身をdropすることは*できません*．
 impl Drop for List {
     fn drop(&mut self) {
         let mut cur_link = mem::replace(&mut self.head, Link::Empty);
-        // `while let` == "do this thing until this pattern doesn't match"
+        // `while let` == 「パターンにマッチしなくなるまでループする」
         while let Link::More(mut boxed_node) = cur_link {
             cur_link = mem::replace(&mut boxed_node.next, Link::Empty);
-            // boxed_node goes out of scope and gets dropped here;
-            // but its Node's `next` field has been set to Link::Empty
-            // so no unbounded recursion occurs.
+            // boxed_nodeはここでスコープから外れdropされます
+            // しかしそのNodeの`next`はすでにLink::Emptyになっているので
+            // dropは再帰しません
         }
     }
 }

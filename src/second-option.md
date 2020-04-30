@@ -24,7 +24,7 @@ pub struct List {
     head: Link,
 }
 
-// yay type aliases!
+// 型エイリアスです！イエーイ！
 type Link = Option<Box<Node>>;
 
 struct Node {

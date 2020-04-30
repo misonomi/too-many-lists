@@ -199,16 +199,16 @@ error[E0063]: missing field `next` in initializer of `second::Iter<'_, _>`
 具体的にいうとこうです：
 
 ```rust ,ignore
-// Only one reference in input, so the output must be derived from that input
-fn foo(&A) -> &B; // sugar for:
+// 入力が一つしかないので出力のライフタイムはその一つしかない入力に依存すると推測する
+fn foo(&A) -> &B; // これは次と同じ：
 fn foo<'a>(&'a A) -> &'a B;
 
-// Many inputs, assume they're all independent
-fn foo(&A, &B, &C); // sugar for:
+// たくさんある入力はそれぞれ独立のライフタイムだと推測する
+fn foo(&A, &B, &C); // これは次と同じ：
 fn foo<'a, 'b, 'c>(&'a A, &'b B, &'c C);
 
-// Methods, assume all output lifetimes are derived from `self`
-fn foo(&self, &B, &C) -> &D; // sugar for:
+// メソッドの出力は`self`と同じだと推測する
+fn foo(&self, &B, &C) -> &D; // これは次と同じ：
 fn foo<'a, 'b, 'c>(&'a self, &'b B, &'c C) -> &'a D;
 ```
 
@@ -251,28 +251,27 @@ impl<T> Iterator for Iter<T> {
 ライフタイムをつけなくてはいけないのは関数と型のシグネチャです：
 
 ```rust ,ignore
-// Iter is generic over *some* lifetime, it doesn't care
+// Iterは*何らかの*ライフタイムに対してジェネリックですが，それが何かはどうでもいいです
 pub struct Iter<'a, T> {
     next: Option<&'a Node<T>>,
 }
 
-// No lifetime here, List doesn't have any associated lifetimes
+// Listには紐づくライフタイムはないのでライフタイムパラメータなし
 impl<T> List<T> {
-    // We declare a fresh lifetime here for the *exact* borrow that
-    // creates the iter. Now &self needs to be valid as long as the
-    // Iter is around.
+    // iterに使われる*まさにその*借用のためにライフタイムを宣言しました
+    // これで&selfはIterが生きる限り生き続ける必要があります
     pub fn iter<'a>(&'a self) -> Iter<'a, T> {
         Iter { next: self.head.map(|node| &node) }
     }
 }
 
-// We *do* have a lifetime here, because Iter has one that we need to define
+// Iterにつける必要があるのでライフタイムは要ります
 impl<'a, T> Iterator for Iter<'a, T> {
-    // Need it here too, this is a type declaration
+    // 型宣言なのでここにも要ります
     type Item = &'a T;
 
-    // None of this needs to change, handled by the above.
-    // Self continues to be incredibly hype and amazing
+    // 上述のシュガーがあるのでここはライフタイムをつけなくても大丈夫です
+    // Selfは相変わらずめっちゃ最高
     fn next(&mut self) -> Option<Self::Item> {
         self.next.map(|node| {
             self.next = node.next.map(|node| &node);

@@ -4,19 +4,19 @@
 
 ```rust ,ignore
 pub fn pop_front(&mut self) -> Option<T> {
-    // need to take the old head, ensuring it's -2
+    // 古いheadをtakeする必要あり，これで-2
     self.head.take().map(|old_head| {                         // -1 old
         match old_head.borrow_mut().next.take() {
             Some(new_head) => {                               // -1 new
-                // not emptying list
+                // 空でないリスト
                 new_head.borrow_mut().prev.take();            // -1 old
                 self.head = Some(new_head);                   // +1 new
-                // total: -2 old, +0 new
+                // 計：-2 old, +0 new
             }
             None => {
-                // emptying list
+                // 空リスト
                 self.tail.take();                             // -1 old
-                // total: -2 old, (no new)
+                // 計：-2 old, (no new)
             }
         }
         old_head.elem
@@ -161,27 +161,27 @@ mod test {
     fn basics() {
         let mut list = List::new();
 
-        // Check empty list behaves right
+        // 空のリストが動くことを確認
         assert_eq!(list.pop_front(), None);
 
-        // Populate list
+        // リストの要素をつめる
         list.push_front(1);
         list.push_front(2);
         list.push_front(3);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop_front(), Some(3));
         assert_eq!(list.pop_front(), Some(2));
 
-        // Push some more just to make sure nothing's corrupted
+        // 何も壊れてないことを確認するためにもう一回push
         list.push_front(4);
         list.push_front(5);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop_front(), Some(5));
         assert_eq!(list.pop_front(), Some(4));
 
-        // Check exhaustion
+        // リストを出し切ったとき
         assert_eq!(list.pop_front(), Some(1));
         assert_eq!(list.pop_front(), None);
     }

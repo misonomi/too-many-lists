@@ -33,8 +33,8 @@ nextが`Option<Self::Item>`を返す理由は，このメソッドが`has_next`�
 
 
 ```rust ,ignore
-// Tuple structs are an alternative form of struct,
-// useful for trivial wrappers around other types.
+// タプル構造体はstructの変化形の一つです
+// 他の型のラッパーを作るときに便利
 pub struct IntoIter<T>(List<T>);
 
 impl<T> List<T> {
@@ -46,7 +46,7 @@ impl<T> List<T> {
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
-        // access fields of a tuple struct numerically
+        // タプル構造体のフィールドには数字でアクセス
         self.0.pop()
     }
 }

@@ -22,7 +22,7 @@ Rustのenumはあなたが大好きなあのenumそのものです．じゃあ�
 ```rust ,ignore
 // in first.rs
 
-// pub says we want people outside this module to be able to use List
+// pubはListが外部から使えることを意味します
 pub enum List {
     Empty,
     Elem(i32, List),

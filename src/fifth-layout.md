@@ -80,20 +80,20 @@ impl<T> List<T> {
     pub fn push(&mut self, elem: T) {
         let new_tail = Box::new(Node {
             elem: elem,
-            // When you push onto the tail, your next is always None
+            // pushしたときのnextは常にNone
             next: None,
         });
 
-        // swap the old tail to point to the new tail
+        // 古いtailを新しいtailに更新
         let old_tail = mem::replace(&mut self.tail, Some(new_tail));
 
         match old_tail {
             Some(mut old_tail) => {
-                // If the old tail existed, update it to point to the new tail
+                // もしtailがすでにあれば新しいtailを入れる
                 old_tail.next = Some(new_tail);
             }
             None => {
-                // Otherwise, update the head to point to it
+                // そうでなければheadに入れる
                 self.head = Some(new_tail);
             }
         }
@@ -156,19 +156,19 @@ impl<T> List<T> {
     pub fn push(&mut self, elem: T) {
         let new_tail = Box::new(Node {
             elem: elem,
-            // When you push onto the tail, your next is always None
+            // pushしたときのnextは常にNone
             next: None,
         });
 
         // Put the box in the right place, and then grab a reference to its Node
         let new_tail = match self.tail.take() {
             Some(old_tail) => {
-                // If the old tail existed, update it to point to the new tail
+                // もしtailがすでにあれば新しいtailを入れる
                 old_tail.next = Some(new_tail);
                 old_tail.next.as_mut().map(|node| &mut **node)
             }
             None => {
-                // Otherwise, update the head to point to it
+                // そうでなければheadに入れる
                 self.head = Some(new_tail);
                 self.head.as_mut().map(|node| &mut **node)
             }
@@ -217,19 +217,19 @@ impl<'a, T> List<'a, T> {
     pub fn push(&mut self, elem: T) {
         let new_tail = Box::new(Node {
             elem: elem,
-            // When you push onto the tail, your next is always None
+            // pushしたときのnextは常にNone
             next: None,
         });
 
         // Put the box in the right place, and then grab a reference to its Node
         let new_tail = match self.tail.take() {
             Some(old_tail) => {
-                // If the old tail existed, update it to point to the new tail
+                // もしtailがすでにあれば新しいtailを入れる
                 old_tail.next = Some(new_tail);
                 old_tail.next.as_mut().map(|node| &mut **node)
             }
             None => {
-                // Otherwise, update the head to point to it
+                // そうでなければheadに入れる
                 self.head = Some(new_tail);
                 self.head.as_mut().map(|node| &mut **node)
             }
@@ -255,7 +255,7 @@ note: first, the lifetime cannot outlive the anonymous lifetime #1 defined on th
 18 | /     pub fn push(&mut self, elem: T) {
 19 | |         let new_tail = Box::new(Node {
 20 | |             elem: elem,
-21 | |             // When you push onto the tail, your next is always None
+21 | |             // pushしたときのnextは常にNone
 ...  |
 39 | |         self.tail = new_tail;
 40 | |     }
@@ -308,12 +308,12 @@ warning: field is never used: `elem`
 
 ```rust ,ignore
 pub fn pop(&'a mut self) -> Option<T> {
-    // Grab the list's current head
+    // リストの今のheadを取る
     self.head.take().map(|head| {
         let head = *head;
         self.head = head.next;
 
-        // If we're out of `head`, make sure to set the tail to `None`.
+        // もし`head`がなかったらtailに`None`を入れる
         if self.head.is_none() {
             self.tail = None;
         }
@@ -332,27 +332,27 @@ mod test {
     fn basics() {
         let mut list = List::new();
 
-        // Check empty list behaves right
+        // 空のリストが動くことを確認
         assert_eq!(list.pop(), None);
 
-        // Populate list
+        // リストの要素をつめる
         list.push(1);
         list.push(2);
         list.push(3);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), Some(2));
 
-        // Push some more just to make sure nothing's corrupted
+        // 何も壊れてないことを確認するためにもう一回push
         list.push(4);
         list.push(5);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(3));
         assert_eq!(list.pop(), Some(4));
 
-        // Check exhaustion
+        // リストを出し切ったとき
         assert_eq!(list.pop(), Some(5));
         assert_eq!(list.pop(), None);
     }

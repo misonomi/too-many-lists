@@ -105,12 +105,13 @@ pub fn push(&mut self, elem: T) {
 
     let raw_tail: *mut _ = &mut *new_tail;
 
-    // .is_null checks for null, equivalent to checking for None
+    // .is_nullはnullかどうかをチェックします
+    // Noneかどうかをチェックするのと同じ役割です
     if !self.tail.is_null() {
-        // If the old tail existed, update it to point to the new tail
+        // もしtailがすでにあれば新しいtailを入れる
         self.tail.next = Some(new_tail);
     } else {
-        // Otherwise, update the head to point to it
+        // そうでなければheadに入れる
         self.head = Some(new_tail);
     }
 
@@ -189,14 +190,15 @@ pub fn push(&mut self, elem: T) {
 
     let raw_tail: *mut _ = &mut *new_tail;
 
-    // Put the box in the right place, and then grab a reference to its Node
+    // .is_nullはnullかどうかをチェックします
+    // Noneかどうかをチェックするのと同じ役割です
     if !self.tail.is_null() {
-        // If the old tail existed, update it to point to the new tail
+        // もしtailがすでにあれば新しいtailを入れる
         unsafe {
             (*self.tail).next = Some(new_tail);
         }
     } else {
-        // Otherwise, update the head to point to it
+        // そうでなければheadに入れる
         self.head = Some(new_tail);
     }
 
@@ -278,35 +280,35 @@ mod test {
     fn basics() {
         let mut list = List::new();
 
-        // Check empty list behaves right
+        // 空のリストが動くことを確認
         assert_eq!(list.pop(), None);
 
-        // Populate list
+        // リストの要素をつめる
         list.push(1);
         list.push(2);
         list.push(3);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), Some(2));
 
-        // Push some more just to make sure nothing's corrupted
+        // 何も壊れてないことを確認するためにもう一回push
         list.push(4);
         list.push(5);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(3));
         assert_eq!(list.pop(), Some(4));
 
-        // Check exhaustion
+        // リストを出し切ったとき
         assert_eq!(list.pop(), Some(5));
         assert_eq!(list.pop(), None);
 
-        // Check the exhaustion case fixed the pointer right
+        // リストを出し切ってもポインタが破壊されてないことを確認
         list.push(6);
         list.push(7);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(6));
         assert_eq!(list.pop(), Some(7));
         assert_eq!(list.pop(), None);

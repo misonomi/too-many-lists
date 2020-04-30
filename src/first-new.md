@@ -4,7 +4,7 @@
 
 ```rust ,ignore
 impl List {
-    // TODO, make code happen
+    // TODO: コードを書く
 }
 ```
 
