@@ -1,7 +1,8 @@
 # Push
 
-So let's write pushing a value onto a list. `push` *mutates* the list,
-so we'll want to take `&mut self`. We also need to take an i32 to push:
+ではリストに値を追加（push）する操作を書いていきましょう．`push`は
+リストの変更を伴うので`&mut self`を引数に取ります．pushするi32の値も
+引数に取る必要があります：
 
 ```rust ,ignore
 impl List {
@@ -11,7 +12,7 @@ impl List {
 }
 ```
 
-First thing's first, we need to make a node to store our element in:
+まずは要素をいれるNodeを作りましょう．
 
 ```rust ,ignore
     pub fn push(&mut self, elem: i32) {
@@ -22,7 +23,7 @@ First thing's first, we need to make a node to store our element in:
     }
 ```
 
-What goes `next`? Well, the entire old list! Can we... just do that?
+`next`には何が入るでしょうか？えーっと，リスト全部です！たぶん...こう？
 
 ```rust ,ignore
 impl List {
@@ -44,19 +45,18 @@ error[E0507]: cannot move out of borrowed content
    |                   ^^^^^^^^^ cannot move out of borrowed content
 ```
 
-Nooooope. Rust is telling us the right thing, but it's certainly not obvious
-what exactly it means, or what to do about it:
+うえええええん．Rustは私達に正論を突きつけています．でもこれが具体的に何を
+意味するのか，あるいはどうすればいいかは判然としません：
 
 > cannot move out of borrowed content
 
-We're trying to move the `self.head` field out to `next`, but Rust doesn't want
-us doing that. This would leave `self` only partially initialized when we end
-the borrow and "give it back" to its rightful owner. As we said before, that's
-the *one* thing you can't do with an `&mut`: It would be super rude,
-and Rust is very polite (it would also be incredibly dangerous, but surely
-*that* isn't why it cares).
+私達は`self.head`を`next`にムーブしようとしましたが，Rustはそういうことを
+やってほしくないようです．これをすると`self`は一部が欠けた状態でこのメソッド
+から返されることになります．すでに見たとおり，これは`&mut`で唯一許されていない
+ことです．借りたものをちゃんと返さないのは超失礼なことで，Rustはとても真面目なのです
+（超危険なことでもあるのですが，今回はそういう問題ではありません）．
 
-What if we put something back? Namely, the node that we're creating:
+では何かを戻したらどうでしょう？つまり，今作ったノードとか：
 
 
 ```rust ,ignore
@@ -79,23 +79,22 @@ error[E0507]: cannot move out of borrowed content
    |                   ^^^^^^^^^ cannot move out of borrowed content
 ```
 
-No dice. In principle, this is something Rust could actually accept, but it
-won't (for various reasons -- the most serious being [exception safety][]). We need
-some way to get the head without Rust noticing that it's gone. For advice, we
-turn to infamous Rust Hacker Indiana Jones:
+だめかー．原則的にはこれはRust的にはOKなのですが，実際にはだめです（理由はいくつか
+ありますが，[例外に対する安全性][exception safety]が一番深刻な問題です）．Rustに値を取ったと
+気づかれないように取る方法が必要です．ここは悪名高いRustのハッカー，
+インディ・ジョーンズに教えを請うことにしましょう：
 
-![Indy Prepares to mem::replace](img/indy.gif)
+![mem::replaceの構えを取るインディ](img/indy.gif)
 
-Ah yes, Indy suggests the `mem::replace` maneuver. This incredibly useful
-function lets us steal a value out of a borrow by *replacing* it with another
-value. Let's just pull in `std::mem` at the top of the file, so that `mem` is in
-local scope:
+ああ！インディは`mem::replace`を使うことを提案しています．この超有能な関数を使うと，
+借りた値を代わりのものと入れ替えることで盗んでしまうことができます．まずは
+`std::mem`をファイルの先頭に持ってきて`mem`をローカルスコープで使えるようにしましょう：
 
 ```rust ,ignore
 use std::mem;
 ```
 
-and use it appropriately:
+そしていい感じに使います：
 
 ```rust ,ignore
 pub fn push(&mut self, elem: i32) {
@@ -108,13 +107,13 @@ pub fn push(&mut self, elem: i32) {
 }
 ```
 
-Here we `replace` self.head temporarily with Link::Empty before replacing it
-with the new head of the list. I'm not gonna lie: this is a pretty unfortunate
-thing to have to do. Sadly, we must (for now).
+ここで，新しいノードをいれる前，一時的にself.headをLink::Emptyにしています．
+今から嘘をつきます．こういうことをしなきゃいけないのは不幸なことです．こうする
+他に方法はないのです（いまのところは）．
 
-But hey, that's `push` all done! Probably. We should probably test it, honestly.
-Right now the easiest way to do that is probably to write `pop`, and make sure
-that it produces the right results.
+でもこれで`push`は完成です！多分．多分テストしたほうが良さそうですね，正直．
+とりあえず一番簡単なやり方は`pop`を書いて，予期したとおりに動くことを確認する
+ことでしょう．
 
 
 

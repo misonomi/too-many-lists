@@ -1,9 +1,8 @@
 # Pop
 
-Like `push`, `pop` wants to mutate the list. Unlike `push`, we actually
-want to return something. But `pop` also has to deal with a tricky corner
-case: what if the list is empty? To represent this case, we use the trusty
-`Option` type:
+`push`同様，`pop`もリストに変更を加えますが，`push`と違い返り値があります．
+そしてリストが空の場合という厄介な状態を考えなくてはいけません．この
+ケースに対処するために，信頼できる`Option`型を使います：
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
@@ -11,18 +10,18 @@ pub fn pop(&mut self) -> Option<i32> {
 }
 ```
 
-`Option<T>` is an enum that represents a value that may exist. It can either be
-`Some(T)` or `None`. We could make our own enum for this like we did for
-Link, but we want our users to be able to understand what the heck our return
-type is, and Option is so ubiquitous that *everyone* knows it. In fact, it's so
-fundamental that it's implicitly imported into scope in every file, as well
-as its variants `Some` and `None` (so we don't have to say `Option::None`).
+`Option<T>`は値が存在するかもしれないことを表すのに使われ，`Some(T)`か`None`
+の状態を取ることができます．Linkのときやったように似たような型を自作することも
+できますが，このリストを使う人が戻り値の型が一体全体何なのか考えなくていいように，
+Optionという知らない人がいないほどありふれてる型を使います．実際あまりにも
+基礎的なので何も書かなくても`Some`と`None`と一緒にすべての.rsファイルに
+インポートされています（なので`Option::None`とか書かなくてもいいのです）．
 
-The pointy bits on `Option<T>` indicate that Option is actually *generic* over
-T. That means that you can make an Option for *any* type!
+`Option<T>`のとげとげはOptionがTの*ジェネリック型*であることを表しています．
+どんな型のOptionも作ることができるのです！
 
-So uh, we have this `Link` thing, how do we figure out if it's Empty or has
-More? Pattern matching with `match`!
+はい，で，この`Link`とかいうのがあるわけですが，どうやってこれがEmptyかMoreか
+判断するのでしょうか？`match`を使ったパターンマッチングです！
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
@@ -52,11 +51,11 @@ error[E0308]: mismatched types
               found type `()`
 ```
 
-Whoops, `pop` has to return a value, and we're not doing that yet. We *could*
-return `None`, but in this case it's probably a better idea to return
-`unimplemented!()`, to indicate that we aren't done implementing the function.
-`unimplemented!()` is a macro (`!` indicates a macro) that panics the program
-when we get to it (\~crashes it in a controlled manner).
+おおおっと．`pop`は値を返さなくてはいけませんが，まだ実装してませんでした．
+`None`を返すこともできますが，このような場合は関数がまだ未実装であることを
+表す`unimplemented!()`を返すのがよさそうです．`unimplemented!()`はマクロで
+（`!`がマクロであることを表しています），実行するとプログラムがパニックします
+（制御下でクラッシュさせます）．
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
@@ -72,15 +71,14 @@ pub fn pop(&mut self) -> Option<i32> {
 }
 ```
 
-Unconditional panics are an example of a [diverging function][diverging].
-Diverging functions never return to the caller, so they may be used in places
-where a value of any type is expected. Here, `unimplemented!()` is being
-used in place of a value of type `Option<T>`.
+無条件でパニックするような関数は[発散する関数][diverging]と呼ばれます．
+発散する関数は値を返さず，したがってどんな型の値としても使うことが
+できます．ここでは`unimplemented!()`の返り値を`Option<T>`として使っています．
 
-Note also that we don't need to write `return` in our program. The last
-expression (basically line) in a function is implicitly its return value. This
-lets us express really simple things a bit more concisely. You can always
-explicitly return early with `return` like any other C-like language.
+`return`を書かなくていいことにも注目してください．最後の表現（基本的には行）
+が暗黙的に関数の返り値になります．これでシンプルな関数をより簡潔に書くことが
+できるのです．ほかのCライクな言語のように，明示的に`return`を使って
+早期リターンすることもできます．
 
 ```text
 > cargo build
@@ -104,16 +102,16 @@ note: move occurs because `node` has type `std::boxed::Box<first::Node>`, which 
    |                        ^^^^
 ```
 
-Come on Rust, get off our back! As always, Rust is hella mad at us. Thankfully,
-this time it's also giving us the full scoop! By default, a pattern match will
-try to move its contents into the new branch, but we can't do this because we
-don't own self by-value here.
+頼むぞRust，邪魔しないでくれ！いつもどおりRustは激おこです．ありがたいことに
+今回は何がいけないのか全部言ってくれています！デフォルトでは，パターンマッチを
+するときmatch節への値のムーブが発生します．しかし今回はself.headの所有権を
+持っていないためそれはできません．
 
 ```text
 help: consider borrowing here: `&self.head`
 ```
 
-Rust says we should add a reference to our `match` to fix that. 🤷‍♀️ Let's try it:
+Rustは`match`節で参照を使えと言ってます．🤷‍♀️まあ試してみましょう：
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
@@ -155,10 +153,10 @@ warning: field is never used: `next`
    |     ^^^^^^^^^^
 ```
 
-Hooray, compiling again! Now let's figure out that logic. We want to make an
-Option, so let's make a variable for that. In the Empty case we need to return
-None. In the More case we need to return `Some(i32)`, and change the head of
-the list. So, let's try to do basically that?
+イエーイ，コンパイルが通りました！ではTODOに入る処理を考えていきましょう．
+Optionを返したいので，そのための変数を作りましょう．EmptyのときにはNoneを
+返せばいいですね．Moreのときは`Some(i32)`を返し，Listのheadを更新します．
+じゃあとりあえずはこんな感じでどうでしょうか？
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
@@ -187,30 +185,28 @@ error[E0507]: cannot move out of borrowed content
 
 ```
 
-*head*
+*(頭を机に伏せる)*
 
-*desk*
+共有参照しか持ってない`node`から値を取ろうとしているのがよくないようです．
 
-We're trying to move out of `node` when all we have is a shared reference to it.
+ここは一旦私達が何をしようとしているのか考え直すべきでしょう．私達がやりたいのは
+こういうことです：
 
-We should probably step back and think about what we're trying to do. We want
-to:
+* リストが空か確認する
+* もし空ならNoneを返す
+* もし空*でない*なら...
+    * リストのheadを消す
+    * headの`elem`を消す
+    * リストのheadを古いheadの`next`に更新する
+    * `Some(elem)`を返す
 
-* Check if the list is empty.
-* If it's empty, just return None
-* If it's *not* empty
-    * remove the head of the list
-    * remove its `elem`
-    * replace the list's head with its `next`
-    * return `Some(elem)`
+重要な点は私達がなにかを*消そう*としている点です．つまり，リストのheadの*値*を
+持っている必要があります．これは明らかに`&self.head`の共有参照を使っていては
+達成できません．そもそもこの関数は`self`の可変参照*しか*持っておらず，
+*入れ替える*ことでしか値を取ることができません．これはまたEmptyの出番のよう
+ですね！
 
-The key insight is we want to *remove* things, which means we want to get the
-head of the list *by value*. We certainly can't do that through the shared
-reference we get through `&self.head`. We also "only" have a mutable reference
-to `self`, so the only way we can move stuff is to *replace it*. Looks like we're doing
-the Empty dance again!
-
-Let's try that:
+試してみましょう：
 
 
 ```rust ,ignore
@@ -235,19 +231,17 @@ cargo build
    Finished dev [unoptimized + debuginfo] target(s) in 0.22s
 ```
 
-O M G
+や　っ　た　ぜ
 
-It compiled without *any* warnings!!!!!
+*一つの*警告もなくコンパイルしました！！！！！
 
-Actually I'm going to apply my own personal lint here: we made this `result`
-value to return, but actually we didn't need to do that at all! Just as a
-function evaluates to its last expression, every block also evaluates to
-its last expression. Normally we supress this behaviour with semi-colons,
-which instead makes the block evaluate to the empty tuple, `()`. This is
-actually the value that functions which don't declare a return value -- like
-`push` -- return.
+ちょっとここで個人的なlintを行いたいと思います．私達は`result`を返り値に
+していますが，実はそんなことをする必要はないのです！関数がその最後の行を
+返すように，全ての節もその最後の行を返すのです．普通はセミコロンをつけることで
+空タプル`()`を返すようにします．返り値を定義していない関数（`push`みたいな）も
+空タプルを返します．
 
-So instead, we can write `pop` as:
+そんなわけで，`pop`はこんなふうに書けます：
 
 ```rust ,ignore
 pub fn pop(&mut self) -> Option<i32> {
@@ -261,9 +255,8 @@ pub fn pop(&mut self) -> Option<i32> {
 }
 ```
 
-Which is a bit more concise and idiomatic. Note that the Link::Empty branch
-completely lost its braces, because we only have one expression to
-evaluate. Just a nice shorthand for simple cases.
+この方が簡潔で慣用的です．Link::Emptyのところにカッコがないことに注目してください．
+一つしか表現がないシンプルな場合にはこのように書くことができます．
 
 ```text
 cargo build
@@ -271,9 +264,9 @@ cargo build
    Finished dev [unoptimized + debuginfo] target(s) in 0.22s
 ```
 
-Nice, still works!
+よしよし，これでも動きますね！
 
 
 
 [ownership]: first-ownership.html
-[diverging]: https://doc.rust-lang.org/nightly/book/ch19-04-advanced-types.html#the-never-type-that-never-returns
+[diverging]: https://doc.rust-jp.rs/book/second-edition/ch19-04-advanced-types.html#never%E5%9E%8B%E3%81%AF%E7%B5%B6%E5%AF%BE%E3%81%AB%E8%BF%94%E3%82%89%E3%81%AA%E3%81%84

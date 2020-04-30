@@ -1,9 +1,9 @@
-# Basics
+# 基本
 
-We already know a lot of the basics of Rust now, so we can do a lot of the
-simple stuff again.
+Rustの基本についてはすでにだいぶ分かっていますので，簡単なコードをもう一度書く
+ことは造作もありません．
 
-For the constructor, we can again just copy-paste:
+コンストラクタはコピペで十分です：
 
 ```rust ,ignore
 impl<T> List<T> {
@@ -13,25 +13,26 @@ impl<T> List<T> {
 }
 ```
 
-`push` and `pop` don't really make sense anymore. Instead we can provide
-`append` and `tail`, which provide approximately the same thing.
+今回は`push`と`pop`は意味をなしません．代わりにだいたい同じ機能の`append`
+と`tail`を実装しましょう．
 
-Let's start with appending. It takes a list and an element, and returns a
-List. Like the mutable list case, we want to make a new node, that has the old
-list as its `next` value. The only novel thing is how to *get* that next value,
-because we're not allowed to mutate anything.
+リストに要素を追加する`append`から始めましょう．この関数はリストと要素を
+一つずつとり，それらをくっつけたリストを返します．可変のリストのとき同様
+新しいノードを作りたいわけですが，そのノードの`next`は元のリストを指している
+必要があります．目新しいことは，どうやってもとのリストに変更を加えずに
+`next`を取得するかということくらいです．
 
-The answer to our prayers is the Clone trait. Clone is implemented by almost
-every type, and provides a generic way to get "another one like this one" that
-is logically disjoint given only a shared reference. It's like a copy
-constructor in C++, but it's never implicitly invoked.
+その答えはCloneトレイトです．Cloneはほぼ全ての型に対して実装されており，
+元の参照から切り離された「元オブジェクトとだいたい同じもの」を得る手段を
+提供しています．C++のコピーコンストラクタに似ていますが，暗黙的に呼ばれること
+がない点が異なります．
 
-Rc in particular uses Clone as the way to increment the reference count. So
-rather than moving a Box to be in the sublist, we just clone the head of the
-old list. We don't even need to match on the head, because Option exposes a
-Clone implementation that does exactly the thing we want.
+特にRcはCloneを，参照カウントを増やすために使用しています．なのでRcを使う場合，
+Boxをサブリストにムーブする代わりに，単に古いリストのheadをCloneすることになります．
+headをmatchで取り出すことも必要ありません．なぜならOptionに実装されているCloneが
+まさに私達がやりたいことをやってくれるからです．
 
-Alright, let's give it a shot:
+よし，じゃあやってみましょう:
 
 ```rust ,ignore
 pub fn append(&self, elem: T) -> List<T> {
@@ -60,13 +61,13 @@ warning: field is never used: `next`
    |     ^^^^^^^^^^^^^
 ```
 
-Wow, Rust is really hard-nosed about actually using fields. It can tell no
-consumer can ever actually observe the use of these fields! Still, we seem good
-so far.
+うわ．Rustはフィールドを使っているかどうかにめちゃくちゃこだわりますね．この
+リストを使う人がフィールドを使ってるか知る手段がないと言っています．でも
+ここまではよさそうです．
 
-`tail` is the logical inverse of this operation. It takes a list and returns the
-whole list with the first element removed. All that is is cloning the *second*
-element in the list (if it exists). Let's try this:
+`tail`は`append`と論理的に逆のことをします．リストを引数に取り，元のリストから
+先頭の要素を除いたリストを返します．やっていることはリストの二つ目の要素があれば
+それをCloneするということです．やってみましょう：
 
 ```rust ,ignore
 pub fn tail(&self) -> List<T> {
@@ -87,9 +88,9 @@ error[E0308]: mismatched types
               found type `std::option::Option<std::option::Option<std::rc::Rc<_>>>`
 ```
 
-Hrm, we messed up. `map` expects us to return a Y, but here we're returning an
-`Option<Y>`. Thankfully, this is another common Option pattern, and we can just
-use `and_then` to let us return an Option.
+ふむ．ぶっ壊れましたね．`map`のクロージャは`Y`を返して欲しがっていますが，私達は
+`Option<Y>`を返しています．幸いこれもOptionを使う上でよくあるパターンです．
+`and_then`を使えばOptionを返すことができます．
 
 ```rust ,ignore
 pub fn tail(&self) -> List<T> {
@@ -102,10 +103,10 @@ pub fn tail(&self) -> List<T> {
 
 ```
 
-Great.
+素敵．
 
-Now that we have `tail`, we should probably provide `head`, which returns a
-reference to the first element. That's just `peek` from the mutable list:
+これで`tail`ができました．多分一つ目の要素を返す`head`も作ったほうがいいでしょう．
+これは`peek`と同じです：
 
 ```rust ,ignore
 pub fn head(&self) -> Option<&T> {
@@ -118,9 +119,9 @@ pub fn head(&self) -> Option<&T> {
 
 ```
 
-Nice.
+やったぜ．
 
-That's enough functionality that we can test it:
+これだけの機能があればテストも書けそうです：
 
 
 ```rust ,ignore
@@ -145,7 +146,7 @@ mod test {
         let list = list.tail();
         assert_eq!(list.head(), None);
 
-        // Make sure empty tail works
+        // tailが空のとき動くことを確認
         let list = list.tail();
         assert_eq!(list.head(), None);
 
@@ -169,9 +170,9 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Perfect!
+完璧！
 
-Iter is also identical to how it was for our mutable list:
+Iterも可変のリストのときと全く同じです：
 
 ```rust ,ignore
 pub struct Iter<'a, T> {
@@ -226,9 +227,7 @@ test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-Who ever said dynamic typing was easier?
+誰だ動的型付けのほうが簡単とか言ったバカは？
 
-(chumps did)
-
-Note that we can't implement IntoIter or IterMut for this type. We only have
-shared access to elements.
+このリストにはIntoIterやIterMutは実装できないことに注意してください．私達は
+要素への共有参照しか持ってません．

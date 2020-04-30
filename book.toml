@@ -1,7 +1,8 @@
 [book]
-title = "Learning Rust With Entirely Too Many Linked Lists"
+title = "あまりにも超大量の連結リストで学ぶRust"
 author = "Alexis Beingessner"
 description = "Learning Rust With Entirely Too Many Linked Lists"
+language = "ja"
 
 [build]
 build-dir = "book"

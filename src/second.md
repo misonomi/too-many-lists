@@ -1,22 +1,23 @@
-# An Ok Singly-Linked Stack
+# まあまあな片方向連結スタック
 
-In the previous chapter we wrote up a minimum viable singly-linked
-stack. However there's a few design decisions that make it kind of sucky.
-Let's make it less sucky. In doing so, we will:
+前章ではギリ実用に耐える片方向連結スタックを書きました．しかし，
+前章のリストにはいくつか設計上の問題があり，ゆえにクソです．
+これをクソじゃなくしていきましょう．そのためにこのようなことをして
+いきます：
 
-* Deinvent the wheel
-* Make our list able to handle any element type
-* Add peeking
-* Make our list iterable
+* 車輪の再発明をやめる
+* どんな型も入れられるようにする
+* peekを実装する
+* イテレートできるようにする
 
-And in the process we'll learn about
+そして，これらを通じて以下のことを学んでいきましょう：
 
-* Advanced Option use
-* Generics
-* Lifetimes
-* Iterators
+* Optionの応用
+* ジェネリクス
+* 借用の寿命
+* イテレータ
 
-Let's add a new file called `second.rs`:
+`second.rs`という名前で新しいファイルを作りましょう:
 
 ```rust ,ignore
 // in lib.rs
@@ -25,4 +26,4 @@ pub mod first;
 pub mod second;
 ```
 
-And copy everything from `first.rs` into it.
+そして`first.rs`の内容をまるごとコピーしてください．

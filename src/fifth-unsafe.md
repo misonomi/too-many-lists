@@ -1,46 +1,41 @@
 # Unsafe Rust
 
-This is a serious, big, complicated, and dangerous topic.
-It's so serious that I wrote [an entire other book][nom] on it.
+これは深刻で，大きく，複雑で，危険な話題です．あまりに深刻なので
+私はもう一冊[これについての本][nom]を書きました．
 
-The long and the short of it is that *every* language is actually unsafe as soon
-as you allow calling into other languages, because you can just have C do
-arbitrarily bad things. Yes: Java, Python, Ruby, Haskell... everyone is wildly
-unsafe in the face of Foreign Function Interfaces (FFI).
+とにもかくにも，*どんな*言語も他の言語を呼び出した途端不安全になります．呼び出したCが適当に
+悪いことをするのを許さなくてはなりませんから．Javaも，Pythonも，Rubyも，Haskellも...
+FFI（Foreign Function Interface）の前ではあらゆる言語が不安全になります．
 
-Rust embraces this truth by splitting itself into two languages: Safe Rust, and
-Unsafe Rust. So far we've only worked with Safe Rust. It's completely 100%
-safe... except that it can FFI into Unsafe Rust.
+Rustはこの事実を受け止めるために自分自身を2つの言語に分けました．安全なRustと，不安全な
+Rustです．ここまで私達は安全なRustだけを扱ってきました．安全なRustは100%完全に安全です...
+不安全なRustにFFIできることを除いて．
 
-Unsafe Rust is a *superset* of Safe Rust. It's completely the same as Safe Rust in all its
-semantics and rules, you're just allowed to do a few *extra* things that are
-wildly unsafe and can cause the dreaded Undefined Behaviour that haunts C.
+不安全なRustは安全なRustの機能をすべて持っており，それに加えていくつか*追加の*，C言語に
+取り付いている恐ろしい未定義動作を引き起こすような，野蛮かつ不安全な操作が行なえます．
 
-Again, this is a really huge topic that has a lot of interesting corner cases.
-I *really* don't want to go really deep into it (well, I do. I did. [Read that
-book][nom]). That's ok, because with linked lists we can actually ignore almost
-all of it.
+繰り返しになりますが，この話題はたくさんの興味深い内容を含みます．私は本当にこの話題に
+深入りしたくありません（実はしたいです．というかしました．[こちらを読んでください][nom]）．
+でも大丈夫です．私達のリストを実装する上では深入りする必要はありません．
 
-The main Unsafe tool we'll be using are *raw pointers*. Raw pointers are
-basically C's pointers. They have no inherent aliasing rules. They have no
-lifetimes. They can be null. They can be dangling. They can point to
-uninitialized memory. They can be cast to and from integers. They can be cast
-to point to a different type. Mutability? Cast it. Pretty much everything goes,
-and that means pretty much anything can go wrong.
+主に使う不安全アイテムは*生ポインタ*です．生ポインタとは，基本的にはCのポインタです．
+エイリアスルールを持たず，ライフタイムを持たず，nullポインタにもダングリングポインタにも
+なり得る，未初期化のメモリ領域を指すこともでき，整数型と互換性があり，キャストして別の型を
+指すようにもできます．可変性がほしい？キャストしましょう．あまりにもなんでもできるため，
+あまりにもよくぶっ壊れます．
 
-This is some bad stuff and honestly you'll live a happier life never having
-to touch these. Unfortunately, we want to write linked lists, and linked lists
-are awful. That means we're going to have to use unsafe pointers.
+生ポインタは悪いやつであり，正直関わらないほうが幸せな人生を送れます．しかし不幸にも
+私達はおぞましい連結リストを書きたいのです．つまり私達は不安全な生ポインタを使わなくては
+いけません．
 
-There are two kinds of raw pointer: `*const T` and `*mut T`. These are meant to
-be `const T*` and `T*` from C, but we really don't care about what C thinks they
-mean that much. You can only dereference a `*const T` to an `&T`, but much like
-the mutability of a variable, this is just a lint against incorrect usage. At
-most it just means you have to cast the `*const` to a `*mut` first. Although if
-you don't actually have permission to mutate the referrent of the pointer,
-you're gonna have a bad time.
+生ポインタには二種類あります．`*const T`と`*mut T`です．これはそれぞれCでいうところの
+`const T*`と`T*`ですが，実はCでどう扱われているかはそれほど重要ではありません．
+`*const T`は参照外しによって`&T`にしか変換できませんが，これは変数の可変性と同じ感じで
+誤った使い方を防ぐためです．要はたいていの場合，まず`*const`を`*mut`にキャストする
+必要があるということです．たとえポインタの指す値を変える権限がなくてもよくないことが
+起こりうるのです．
 
-Anyway, we'll get a better feel for this as we write some code. For now,
-`*mut T == &unchecked mut T`!
+まあなんにせよ書いていくうちに慣れてくるでしょう．とりあえず`*mut T == &unchecked mut T`
+と考えてください！
 
-[nom]: https://doc.rust-lang.org/nightly/nomicon/
+[nom]: https://doc.rust-jp.rs/rust-nomicon-ja/

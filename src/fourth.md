@@ -1,14 +1,14 @@
-# A Bad but Safe Doubly-Linked Deque
+# クソだけどメモリ安全な両端キュー
 
-Now that we've seen Rc and heard about interior mutability, this gives an
-interesting thought... maybe we *can* mutate through an Rc. And if *that's*
-the case, maybe we can implement a *doubly-linked* list totally safely!
+Rcと内部可変性について触れたので，こんな興味深い考えが浮かんできます...Rcを使えば
+値を変更することはできそうです．そしてもし*そうなら*，双方向リストを安全に実装
+できるかもしれません！
 
-In the process we'll become familiar with *interior mutability*, and probably
-learn the hard way that safe doesn't mean *correct*. Doubly-linked lists are
-hard, and I always make a mistake somewhere.
+この章では内部可変性に詳しくなりましょう．そして安全であることは必ずしも*正しい*ことを
+意味しないことをツラい方法で学んでいくことになるでしょう．双方向リストはむずかしいし，
+私はいつもどこかで何かを間違えます．
 
-Let's add a new file called `fourth.rs`:
+`fourth.rs`というファイルを新しく作りましょう：
 
 ```rust ,ignore
 // in lib.rs
@@ -19,7 +19,6 @@ pub mod third;
 pub mod fourth;
 ```
 
-This will be another clean-room operation, though as usual we'll probably find
-some logic that applies verbatim again.
+今回も無菌手術です．でも，いつもみたいに過去の章のロジックを使い回すこともあるでしょう．
 
-Disclaimer: this chapter is basically a demonstration that this is a very bad idea.
+免責事項：この章はダメな例の実演です．

@@ -1,10 +1,10 @@
-# Final Code
+# 最終コード
 
-Alright, so with a teeny-tiny dash of unsafety we managed to get a linear
-time improvement over the naive safe queue, and we managed to reuse almost
-all of the logic from the safe stack!
+さて，不安全にほんのちょびっと触っただけで安全なキューから線形時間の性能向上が
+得られました．しかもほとんどすべてのロジックを安全なスタックから再利用することが
+できています！
 
-We also notably *didn't* have to write any crazy Rc or RefCell stuff.
+そしてRcとかRefCellとかの狂ったものを書かずに済んでいます．
 
 ```rust
 use std::ptr;
@@ -138,35 +138,35 @@ mod test {
     fn basics() {
         let mut list = List::new();
 
-        // Check empty list behaves right
+        // 空のリストが動くことを確認
         assert_eq!(list.pop(), None);
 
-        // Populate list
+        // リストの要素をつめる
         list.push(1);
         list.push(2);
         list.push(3);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), Some(2));
 
-        // Push some more just to make sure nothing's corrupted
+        // 何も壊れてないことを確認するためにもう一回push
         list.push(4);
         list.push(5);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(3));
         assert_eq!(list.pop(), Some(4));
 
-        // Check exhaustion
+        // リストを出し切ったとき
         assert_eq!(list.pop(), Some(5));
         assert_eq!(list.pop(), None);
 
-        // Check the exhaustion case fixed the pointer right
+        // リストを出し切ってもポインタが破壊されてないことを確認
         list.push(6);
         list.push(7);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(6));
         assert_eq!(list.pop(), Some(7));
         assert_eq!(list.pop(), None);

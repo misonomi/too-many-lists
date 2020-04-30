@@ -1,12 +1,12 @@
-# The Double Singly-Linked List
+# 二重片方向リスト
 
-We struggled with doubly-linked lists because they have tangled ownership
-semantics: no node strictly owns any other node. However we struggled
-with this because we brought in our preconceived notions of what a linked
-list *is*. Namely, we assumed that all the links go in the same direction.
+複雑な所有権を持っていたため双方向リストでは苦戦しました．というのも，どのノードも
+他のノードの所有権をはっきりと持っていたわけではなかったからです．しかし私達は
+連結リストに対する先入観があったために苦戦していたとも言えます．つまり，
+すべてのリンクが同じ方向に行くことを想定していたのです．
 
-Instead, we can smash our list into two halves: one going to the left,
-and one going to the right:
+そうではなく，リストを半分に分割して，片方を右回り，もう片方を左回りのリストに
+することもできます：
 
 ```rust ,ignore
 // lib.rs
@@ -24,11 +24,10 @@ struct List<T> {
 }
 ```
 
-Now, rather than having a mere safe stack, we have a general purpose list.
-We can grow the list leftwards or rightwards by pushing onto either stack.
-We can also "walk" along the list by popping values off one end and onto the
-other. To avoid needless allocations, we're going to copy the source of
-our safe Stack to get access to its private details:
+これでただのスタックではなく汎用リストになりました．好きな方のスタックにpush
+することでどちらの方向にもリストを伸ばすことができます．さらに片方の端から
+もう片方の端にNodeを移すことでリストを渡ることもできます．不要なメモリ割り当てを
+避けるために，安全なスタックのソースをコピーして実装の詳細を得ます：
 
 ```rust ,ignore
 pub struct Stack<T> {
@@ -87,7 +86,7 @@ impl<T> Drop for Stack<T> {
 }
 ```
 
-And just rework `push` and `pop` a bit:
+そして`push`と`pop`をちょっと作り変えます：
 
 ```rust ,ignore
 pub fn push(&mut self, elem: T) {
@@ -118,7 +117,7 @@ fn pop_node(&mut self) -> Option<Box<Node<T>>> {
 }
 ```
 
-Now we can make our List:
+これでListのコンストラクタを書けます：
 
 ```rust ,ignore
 pub struct List<T> {
@@ -133,7 +132,7 @@ impl<T> List<T> {
 }
 ```
 
-And we can do the usual stuff:
+いつもの：
 
 
 ```rust ,ignore
@@ -147,7 +146,7 @@ pub fn peek_left_mut(&mut self) -> Option<&mut T> { self.left.peek_mut() }
 pub fn peek_right_mut(&mut self) -> Option<&mut T> { self.right.peek_mut() }
 ```
 
-But most interestingly, we can walk around!
+一番面白いのはリストを渡ることができることです！
 
 
 ```rust ,ignore
@@ -164,8 +163,7 @@ pub fn go_right(&mut self) -> bool {
 }
 ```
 
-We return booleans here as just a convenience to indicate whether we actually
-managed to move. Now let's test this baby out:
+本当に移動ができたかどうかを示すためにbooleanを返しています．テストしてみましょう：
 
 ```rust ,ignore
 #[cfg(test)]
@@ -230,14 +228,11 @@ test silly1::test::walk_aboot ... ok
 test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured
 ```
 
-This is an extreme example of a *finger* data structure, where we maintain
-some kind of finger into the structure, and as a consequence can support
-operations on locations in time proportional to the distance from the finger.
+これは*指差し*データ構造の極端な例です．指差しデータ構造は，データのどこかを指で
+指し続けることで指からの距離に比例した時間で操作を行えるようにするデータ構造です．
 
-We can make very fast changes to the list around our finger, but if we want
-to make changes far away from our finger we have to walk all the way over there.
-We can permanently walk over there by shifting the elements from one stack to
-the other, or we could just walk along the links with an `&mut`
-temporarily to do the changes. However the `&mut` can never go back up the
-list, while our finger can!
+指の周りのノードに対しては高速で操作が行なえますが，指から離れたところに対しては
+リストを渡っていかなくてはいけません．要素を片側からもう片側に移すことで永続的に
+渡る事もできますし，`&mut`を使って一時的に移動することもできます．しかし`&mut`は
+リストを逆にたどることはできないのに対し，指を使えばそれが出来るのです！
 

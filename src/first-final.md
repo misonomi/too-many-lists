@@ -1,6 +1,6 @@
-# The Final Code
+# 最終コード
 
-Alright, 6000 words later, here's all the code we managed to actually write:
+はい，このコードを書くまでに6000語（翻訳前）かかりました：
 
 ```rust
 use std::mem;
@@ -62,32 +62,32 @@ mod test {
     fn basics() {
         let mut list = List::new();
 
-        // Check empty list behaves right
+        // 空のリストが動くことを確認
         assert_eq!(list.pop(), None);
 
-        // Populate list
+        // リストの要素をつめる
         list.push(1);
         list.push(2);
         list.push(3);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(3));
         assert_eq!(list.pop(), Some(2));
 
-        // Push some more just to make sure nothing's corrupted
+        // 何も壊れてないことを確認するためにもう一回push
         list.push(4);
         list.push(5);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(5));
         assert_eq!(list.pop(), Some(4));
 
-        // Check exhaustion
+        // リストを出し切ったとき
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), None);
     }
 }
 ```
 
-Geez. 80 lines, and half of it was tests! Well, I did say this first one was
-going to take a while!
+マジかよ，80行しかないし半分はテストだぞ！最初に長い章になりますと言ったとおりに
+なりましたね．

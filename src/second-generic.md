@@ -1,11 +1,9 @@
-# Making it all Generic
+# あらゆるものをジェネリックにする
 
-We've already touched a bit on generics with Option and Box. However so
-far we've managed to avoid declaring any new type that is actually generic
-over arbitrary elements.
+OptionとBoxですこしだけジェネリクスには触れました．しかし，これまでは
+なんとかジェネリックな要素を持つ型を宣言することは避けることができていました．
 
-It turns out that's actually really easy. Let's make all of our types generic
-right now:
+実はジェネリック型の宣言はとても簡単です．とりあえず全部ジェネリックにしましょう：
 
 ```rust ,ignore
 pub struct List<T> {
@@ -20,9 +18,8 @@ struct Node<T> {
 }
 ```
 
-You just make everything a little more pointy, and suddenly your code is
-generic. Of course, we can't *just* do this, or else the compiler's going
-to be Super Mad.
+コードに若干とげとげを追加することで唐突にジェネリックになりました．もちろん
+これ*だけ*ではだめです．コンパイラにバチクソ怒られるでしょう．
 
 
 ```text
@@ -42,13 +39,11 @@ error[E0107]: wrong number of type arguments: expected 1, found 0
 
 ```
 
-The problem is pretty clear: we're talking about this `List` thing but that's not
-real anymore. Like Option and Box, we now always have to talk about
-`List<Something>`.
+ここでの問題は明らかです．私達はこの`List`とかいうのを扱っていますが，そんなものは
+もう存在しません．OptionやBoxのように，常に`List<何か>`を扱わなくてはいけないのです．
 
-But what's the Something we use in all these impls? Just like List, we want our
-implementations to work with *all* the T's. So, just like List, let's make our
-`impl`s pointy:
+しかしこのimplに渡す何かとは何でしょうか？List同様，*全て*のコードがTに対して
+動いてほしいですよね．ではListと同じく`impl`もとげとげにしましょう：
 
 
 ```rust ,ignore
@@ -84,7 +79,7 @@ impl<T> Drop for List<T> {
 }
 ```
 
-...and that's it!
+...そしてこれで終わりです！
 
 
 ```
@@ -100,9 +95,8 @@ test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
 
 ```
 
-All of our code is now completely generic over arbitrary values of T. Dang,
-Rust is *easy*. I'd like to make a particular shout-out to `new` which didn't
-even change:
+私達のコードはこれで完全に任意の型Tについてジェネリックになりました．いやマジ
+Rust*楽勝*だな．ここで一切の変更が加えられていない`new`に注目してみましょう：
 
 ```rust ,ignore
 pub fn new() -> Self {
@@ -110,9 +104,8 @@ pub fn new() -> Self {
 }
 ```
 
-Bask in the Glory that is Self, guardian of refactoring and copy-pasta coding.
-Also of interest, we don't write `List<T>` when we construct an instance of
-list. That part's inferred for us based on the fact that we're returning it
-from a function that expects a `List<T>`.
+リファクタリングとコピペの守護神，Selfの栄光を讃えましょう．Listを生成する際
+`List<T>`と書いていないことにも注目してください．`List<T>`を返す関数の戻り値
+であることから，関数を呼んだ側からTの型が推論されます．
 
-Alright, let's move on to totally new *behaviour*!
+さて，次は全く新しい*処理*を書いていきましょう！

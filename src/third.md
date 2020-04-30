@@ -1,17 +1,17 @@
-# A Persistent Singly-Linked Stack
+# 永続的な片方向スタック
 
-Alright, we've mastered the art of mutable singly-linked stacks.
+私達は片方向リストを完全に極めました．
 
-Let's move from *single* ownership to *shared* ownership by writing a
-*persistent* immutable singly-linked list. This will be exactly the list
-that functional programmers have come to know and love. You can get the
-head *or* the tail and put someone's head on someone else's tail...
-and... that's basically it. Immutability is a hell of a drug.
+単一の所有権だけでなく共有の所有権も扱うことにしましょう．*永続的な*片方向
+リストを作るのです．関数型プログラマのみなさんがおなじみのリストはこれです．
+リストの先頭*もしくは*末尾を取得できて，リストの先頭をを他のリストの末尾に
+くっつけることができて...あとは...そのくらいですかね．不変性というのはヤバい
+クスリですね．
 
-In the process we'll largely just become familiar with Rc and Arc, but this
-will set us up for the next list which will *change the game*.
+この章の主眼はRcとArcと仲良くなることですが，同時に次章の*全く新しい*
+リストに備える章でもあります．
 
-Let's add a new file called `third.rs`:
+`third.rs`というファイルを加えましょう：
 
 ```rust ,ignore
 // in lib.rs
@@ -21,4 +21,4 @@ pub mod second;
 pub mod third;
 ```
 
-No copy-pasta this time. This is a clean room operation.
+今回は前のコードをコピペしません．無菌手術を執行します．

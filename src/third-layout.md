@@ -1,12 +1,10 @@
-# Layout
+# 設計
 
-Alright, back to the drawing board on layout.
+では再び設計作業に入りましょう．
 
-The most important thing about
-a persistent list is that you can manipulate the tails of lists basically
-for free:
+永続リストで最も重要なことはリストの末尾をほぼノーコストで操作できることです．
 
-For instance, this isn't an uncommon workload to see with a persistent list:
+例えばこのような操作は永続リストではよくあることです：
 
 ```text
 list1 = A -> B -> C -> D
@@ -14,7 +12,7 @@ list2 = tail(list1) = B -> C -> D
 list3 = push(list2, X) = X -> B -> C -> D
 ```
 
-But at the end we want the memory to look like this:
+そして最終的にはメモリ上でこのような構造になっていてほしいのです：
 
 ```text
 list1 -> A ---+
@@ -26,30 +24,27 @@ list2 ------> B -> C -> D
 list3 -> X ---+
 ```
 
-This just can't work with Boxes, because ownership of `B` is *shared*. Who
-should free it? If I drop list2, does it free B? With boxes we certainly would
-expect so!
+これはBoxでは実現できません．なぜなら`B`が*共有参照*だからです．Bのメモリ割り当て
+が解放されるときはどんなときでしょう？今list2を解放したらBは解放されるべきでしょうか？
+Boxを使うならそうなって然るべきです！
 
-Functional languages -- and indeed almost every other language -- get away with
-this by using *garbage collection*. With the magic of garbage collection, B will
-be freed only after everyone stops looking at it. Hooray!
+関数型言語では--ほぼすべての言語でそうですが--これをガベージコレクションで解決
+しています．ガベージコレクションの魔法のおかげでBが開放されるのはBを参照している
+全てが解放された後です．うほほーい！
 
-Rust doesn't have anything like the garbage collectors these languages have.
-They have *tracing* GC, which will dig through all the memory that's sitting
-around at runtime and figure out what's garbage automatically. Instead, all
-Rust has today is *reference counting*. Reference counting can be thought of
-as a very simple GC. For many workloads, it has significantly less throughput
-than a tracing collector, and it completely falls over if you manage to
-build cycles. But hey, it's all we've got! Thankfully, for our usecase we'll never run into cycles
-(feel free to try to prove this to yourself -- I sure won't).
+Rustにはガベージコレクションがない代わりに，*参照カウンタ*というものがあります．
+参照カウンタは極めてシンプルなGCみたいなものです．大抵の場合トレーシングGCよりも
+性能は著しく低いうえ，参照のループがあるとうまく動きません．でもこれしか
+ないんだからしょうがないですね！幸い私達はループを作ることはないので（検証
+してみてください．自信あります）大丈夫です．
 
-So how do we do reference-counted garbage collection? `Rc`! Rc is just like
-Box, but we can duplicate it, and its memory will *only* be freed when *all*
-the Rc's derived from it are dropped. Unfortunately, this flexibility comes at
-a serious cost: we can only take a shared reference to its internals. This means
-we can't ever really get data out of one of our lists, nor can we mutate them.
+ではどうすれば参照カウンタを使えるのでしょう？`Rc`です！RcはBoxのようなものですが，
+複製することができ，そのメモリは参照が*全て*外されて*はじめて*解放されます．
+不幸にもこの柔軟性の代償は高くつきます．というのは，Rcの中身の共有参照しか
+得ることができないのです．つまり，Rcを使ったリストはデータを取り出すことも
+変更することもできないのです．
 
-So what's our layout gonna look like? Well, previously we had:
+ではどういう設計になるでしょうか？前回はこうでした：
 
 ```rust ,ignore
 pub struct List<T> {
@@ -64,7 +59,7 @@ struct Node<T> {
 }
 ```
 
-Can we just change Box to Rc?
+単にBoxをRcに変えるとどうでしょうか？
 
 ```rust ,ignore
 // in third.rs
@@ -95,9 +90,8 @@ help: possible candidate is found in another module, you can import it into scop
   |
 ```
 
-Oh dang, sick burn. Unlike everything we used for our mutable lists, Rc is so
-lame that it's not even implicitly imported into every single Rust program.
-*What a loser*.
+はいクソ．私達が今まで使ってきたものと違い，RcはRustのプログラムにデフォルトで
+インポートされていないのでした．*雑魚が*．
 
 ```rust ,ignore
 use std::rc::Rc;
@@ -127,9 +121,9 @@ warning: field is never used: `next`
    |     ^^^^^^^^^^^^^
 ```
 
-Seems legit. Rust continues to be a *completely* trivial to write. I bet we can just
-find-and-replace Box with Rc and call it a day!
+大丈夫そうですね．Rustは相変わらずどうでもいいことをいちいち指摘していますが．
+でもこれはBoxをRcに書き換えて全部終わりにできそうですね！
 
 ...
 
-No. No we can't.
+だめです．そうは問屋がおろしません．

@@ -1,15 +1,13 @@
-# Testing
+# テスト
 
-Alright, so we've got `push` and `pop` written, now we can actually test out
-our stack! Rust and cargo support testing as a first-class feature, so this
-will be super easy. All we have to do is write a function, and annotate it with
-`#[test]`.
+さてさて，`push`と`pop`が書けたので実際にスタックをテストしてみましょう！
+RustとCargoはテストを第一級の機能としてサポートしているので，テストを書くのは
+超カンタンです．関数を書いて`#[test]`アノテーションをつければよいだけです．
 
-Generally, we try to keep our tests next to the code that it's testing in the
-Rust community. However we usually make a new namespace for the tests, to
-avoid conflicting with the "real" code. Just as we used `mod` to specify that
-`first.rs` should be included in `lib.rs`, we can use `mod` to basically
-create a whole new file *inline*:
+一般にRust界隈ではテストコードをテストされるコードの横に書く慣習があります．
+しかし，通常は名前の衝突を避けるためテストのための名前空間を用意します．`first.rs`
+を`lib.rs`で使えるように`mod`を使ったのと同じように，`mod`キーワードを使えば
+新しいファイルを作るのと同じようなことを*インラインで*することができます：
 
 
 ```rust ,ignore
@@ -23,7 +21,7 @@ mod test {
 }
 ```
 
-And we invoke it with `cargo test`.
+`cargo test`で実行します．
 
 ```text
 > cargo test
@@ -38,10 +36,10 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ; 0 filtered out
 ```
 
-Yay our do-nothing test passed! Let's make it not-do-nothing. We'll do that
-with the `assert_eq!` macro. This isn't some special testing magic. All it
-does is compare the two things you give it, and panic the program if they don't
-match. Yep, you indicate failure to the test harness by freaking out!
+イエーイ　私達の何もしないテストは無事通りました！これを何もしなくないように
+していきましょう．そのためには`assert_eq!`マクロを使います．これは不思議な
+魔法のたぐいではなく，与えた2つの値を比較してそれらが違えばパニックするだけです．
+キョドることでテストの失敗を知らせるのです！
 
 ```rust ,ignore
 mod test {
@@ -49,27 +47,27 @@ mod test {
     fn basics() {
         let mut list = List::new();
 
-        // Check empty list behaves right
+        // 空のリストが動くことを確認
         assert_eq!(list.pop(), None);
 
-        // Populate list
+        // リストの要素をつめる
         list.push(1);
         list.push(2);
         list.push(3);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(3));
         assert_eq!(list.pop(), Some(2));
 
-        // Push some more just to make sure nothing's corrupted
+        // 何も壊れてないことを確認するためにもう一回push
         list.push(4);
         list.push(5);
 
-        // Check normal removal
+        // 普通に要素を削除してみる
         assert_eq!(list.pop(), Some(5));
         assert_eq!(list.pop(), Some(4));
 
-        // Check exhaustion
+        // リストを出し切ったとき
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), None);
     }
@@ -88,13 +86,12 @@ error[E0433]: failed to resolve: use of undeclared type or module `List`
 
 ```
 
-Oops! Because we made a new module, we need to pull in List explicitly to use
-it.
+おおっと！`mod`で新しいモジュールを切ったのでListを明示的に宣言しなくてはいけません．
 
 ```rust ,ignore
 mod test {
     use super::List;
-    // everything else the same
+    // 後は同じ
 }
 ```
 
@@ -119,21 +116,21 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ; 0 filtered out
 ```
 
-Yay!
+やりい！
 
-What's up with that warning though...? We clearly use List in our test!
+でもこの警告は何でしょう...？Listはどう見ても使ってるだろ！
 
-...but only when testing! To appease the compiler (and to be friendly to our
-consumers), we should indicate that the whole `test` module should only be
-compiled if we're running tests.
+...でもテストのためだけに，ですね！コンパイラを黙らせるために（そしてこの
+パッケージを使う人にわかりやすいように）`test`モジュール全体をテストのとき
+だけにコンパイルされるようにしましょう．
 
 
 ```rust ,ignore
 #[cfg(test)]
 mod test {
     use super::List;
-    // everything else the same
+    // 後は同じ
 }
 ```
 
-And that's everything for testing!
+これでテストは完成です！

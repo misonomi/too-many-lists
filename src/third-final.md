@@ -1,7 +1,6 @@
-# Final Code
+# 最終コード
 
-That's all I really have to say on the immutable stack. We're getting pretty
-good at implementing lists now!
+不変のスタックについてはこれで全部です．だいぶリストの実装がうまくなってきましたね！
 
 ```rust
 use std::rc::Rc;
@@ -91,7 +90,7 @@ mod test {
         let list = list.tail();
         assert_eq!(list.head(), None);
 
-        // Make sure empty tail works
+        // tailが空のとき動くことを確認
         let list = list.tail();
         assert_eq!(list.head(), None);
     }

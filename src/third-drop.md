@@ -1,10 +1,9 @@
 # Drop
 
-Like the mutable lists, we have a recursive destructor problem.
-Admittedly, this isn't as bad of a problem for the immutable list: if we ever
-hit another node that's the head of another list *somewhere*, we won't
-recursively drop it. However it's still a thing we should care about, and
-how to deal with isn't as clear. Here's how we solved it before:
+可変のリスト同様，このリストもdropが再帰する問題を抱えています．確かに
+今回はそれほど大きな問題ではありません．リストの途中の*どこか*で他のリストに
+参照されているノードがあればそこでdropが止まるからです．とはいえ，依然として
+対処すべき問題であり，どうすればいいかは自明ではありません．前回はこうしました：
 
 ```rust ,ignore
 impl<T> Drop for List<T> {
@@ -17,20 +16,20 @@ impl<T> Drop for List<T> {
 }
 ```
 
-The problem is the body of the loop:
+問題はループの中のところです：
 
 ```rust ,ignore
 cur_link = boxed_node.next.take();
 ```
 
-This is mutating the Node inside the Box, but we can't do that with Rc; it only
-gives us shared access, because any number of other Rc's could be pointing at it.
+これはBoxの中のNodeを変更していますが，今回はRcを使っているのでそれはできません．
+他のRcがこの同じノードを参照している可能性があり，私達は共有参照しか持っていません．
 
-But if we know that we're the last list that knows about this node, it
-*would* actually be fine to move the Node out of the Rc. Then we could also
-know when to stop: whenever we *can't* hoist out the Node.
+しかし，もし他の参照がないことがわかっていれば中のNodeをRcの外に出しても大丈夫な
+*はず*です．そして，もし大丈夫でないとき，それはdropを止めるときであるという
+ことを意味しています．
 
-And look at that, Rc has a method that does exactly this: `try_unwrap`:
+刮目してください．Rcにはまさにそのためのメソッド，`try_unwrap`があります：
 
 ```rust ,ignore
 impl<T> Drop for List<T> {
@@ -66,5 +65,5 @@ test third::test::iter ... ok
 test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ```
 
-Great!
-Nice.
+やった！
+勝ち．
